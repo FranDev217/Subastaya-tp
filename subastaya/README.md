@@ -117,4 +117,4 @@ _(Se irá actualizando a medida que se agreguen módulos.)_
 - [ ] WebSockets - sala de subastas en vivo
 - [ ] Background Worker de liquidación
 - [ ] Auditoría de eventos
-- [ ] Documentación Swagger completa
+- [ ] Documentación Swagger completa.
