@@ -13,10 +13,4 @@ public record SubastaEvento(
         LocalDateTime fechaFin,
         PujaResponse ultimaPuja
 ) {
-
-    public enum TipoEvento {
-        NUEVA_PUJA,
-        ESTADO_ACTUAL,
-        ESTADO_CAMBIADO
-    }
 }

@@ -2,6 +2,7 @@ package com.unaj.subastaya.service;
 
 import com.unaj.subastaya.dto.PujaResponse;
 import com.unaj.subastaya.dto.SubastaEvento;
+import com.unaj.subastaya.dto.TipoEvento;
 import com.unaj.subastaya.exception.RecursoNoEncontradoException;
 import com.unaj.subastaya.model.Puja;
 import com.unaj.subastaya.model.Subasta;
@@ -32,7 +33,7 @@ public class SubastaService {
         BigDecimal montoActual = ultimaPuja != null ? ultimaPuja.monto() : subasta.getPrecioBase();
 
         return new SubastaEvento(
-                SubastaEvento.TipoEvento.ESTADO_ACTUAL,
+                TipoEvento.ESTADO_ACTUAL,
                 subasta.getId(),
                 subasta.getEstado(),
                 montoActual,
