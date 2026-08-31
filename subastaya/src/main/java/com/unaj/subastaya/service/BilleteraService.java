@@ -45,6 +45,8 @@ public class BilleteraService {
         billetera.setSaldoDisponible(billetera.getSaldoDisponible().subtract(monto));
         billetera.setSaldoRetenido(billetera.getSaldoRetenido().add(monto));
         registrarMovimiento(billetera, TipoMovimiento.RETENCION, monto, subasta);
+        // flush inmediato: si hay conflicto de version, que salte aca y no al commit de la transaccion del llamador
+        billeteraRepository.flush();
     }
 
     @Transactional
