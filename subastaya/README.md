@@ -29,11 +29,18 @@ Trabajo Práctico de la materia Proyecto de Software - Ing. en Informática.
 - **Endpoints RESTful:** rutas basadas exclusivamente en sustantivos
   plurales y jerarquías de recursos (ej. `GET /api/v1/subastas/{id}/pujas`),
   sin verbos en la URL.
+- **Tiempo real - WebSocket + STOMP:** para evitar polling. Endpoint `ws://localhost:8080/ws`. Handshake HTTP con `101 Switching Protocols`. Sobre el tubo TCP se usa STOMP:
+    - Cliente pide estado inicial por `/app/subastas/{id}` -> recibe `ESTADO_ACTUAL`.
+    - Cliente se suscribe a `/topic/subastas/{id}` -> recibe broadcast de `NUEVA_PUJA`, `EXTENSION_TIEMPO`, `FINALIZADA`/`DESIERTA`.
+    - Flujo: `POST /api/v1/subastas/{id}/pujas` -> `SubastaNotificador` -> `SimpMessagingTemplate.convertAndSend("/topic/...")`.
+    - Tests en `SubastaWebSocketTest.java` con `WebSocketStompClient` real y `BlockingQueue`.
 - **Background Worker:** un proceso `@Scheduled` verifica periódicamente las
   subastas vencidas para liquidarlas o marcarlas como `DESIERTA`.
 - **Auditoría:** los cambios críticos (cambios de estado, extensiones por
   anti-sniping, pujas rechazadas, acreditaciones manuales) quedan
   registrados de forma inmutable en una tabla de `AuditLog`.
+
+
 
 ## Requisitos previos
 
@@ -158,7 +165,7 @@ además queda registrado en `auditoria_log` con acción `PUJA_RECHAZADA`.
 - [x] Modelado de entidades JPA y primera migración
 - [x] Lógica de escrow atómico
 - [x] Regla anti-sniping
-- [ ] WebSockets - sala de subastas en vivo
+- [x] WebSockets - sala de subastas en vivo
 - [ ] Background Worker de liquidación
 - [ ] Auditoría de eventos (pujas rechazadas y anti-sniping ya se auditan; falta lo disparado por el Worker y las acreditaciones manuales)
 - [ ] Documentación Swagger completa.
