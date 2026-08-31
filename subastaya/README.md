@@ -102,6 +102,50 @@ subastaya/
 ![img.png](img.png)
 _(Se irá actualizando a medida que se agreguen módulos.)_
 
+## Prueba de Concurrencia (Optimistic Locking)
+
+Para probar que el `version` de `Billetera` evita que dos pujas idénticas se
+procesen dos veces (requisito 4.1 de la consigna), se envían dos peticiones
+`POST` idénticas al mismo instante contra la misma subasta y comprador. Una
+debe responder `200 OK` y la otra `409 Conflict`.
+
+Requiere tener la app corriendo con el seed data (`V2__seed.sql`) aplicado.
+Ejemplo contra la subasta "Notebook Gamer RTX 4070" (id `1`) y el comprador
+`comprador2@test.com` (id `3`), ajustando el `monto` a uno válido según el
+estado actual de la subasta:
+
+```bash
+BODY='{"compradorId":3,"monto":48000}'
+
+curl -s -o resp1.txt -w "%{http_code}" -X POST \
+  http://localhost:8080/api/v1/subastas/1/pujas \
+  -H "Content-Type: application/json" -d "$BODY" > status1.txt &
+
+curl -s -o resp2.txt -w "%{http_code}" -X POST \
+  http://localhost:8080/api/v1/subastas/1/pujas \
+  -H "Content-Type: application/json" -d "$BODY" > status2.txt &
+
+wait
+echo "STATUS 1: $(cat status1.txt)"; cat resp1.txt
+echo "STATUS 2: $(cat status2.txt)"; cat resp2.txt
+```
+
+Salida real capturada en una corrida local:
+
+```
+STATUS 1: 200
+{"id":7,"subastaId":1,"compradorId":3,"compradorNombre":"Comprador Dos","monto":48000,"fechaPuja":"2026-08-30T21:47:37.8931072","fechaFinSubasta":"2026-08-30T22:08:20.989266","extendidoPorAntiSniping":false}
+STATUS 2: 409
+{"timestamp":"2026-08-30T21:47:37.9016031","status":409,"mensaje":"El recurso fue modificado por otra operación concurrente, reintentá la solicitud","errores":null}
+```
+
+La segunda petición falla porque, al intentar congelar el saldo del mismo
+comprador, Hibernate detecta que el campo `version` de su `Billetera` ya fue
+incrementado por la primera transacción y lanza
+`ObjectOptimisticLockingFailureException`, que el `GlobalExceptionHandler`
+traduce a `409 Conflict` en vez de un `500` genérico. El intento rechazado
+además queda registrado en `auditoria_log` con acción `PUJA_RECHAZADA`.
+
 ## Convenciones de trabajo
 
 - Ramas de trabajo: `feature/nombre-de-la-funcionalidad`
@@ -111,10 +155,10 @@ _(Se irá actualizando a medida que se agreguen módulos.)_
 ## Estado actual del TP
 
 - [x] Setup del proyecto (Spring Boot + PostgreSQL + Docker)
-- [ ] Modelado de entidades JPA y primera migración
-- [ ] Lógica de escrow atómico
-- [ ] Regla anti-sniping
+- [x] Modelado de entidades JPA y primera migración
+- [x] Lógica de escrow atómico
+- [x] Regla anti-sniping
 - [ ] WebSockets - sala de subastas en vivo
 - [ ] Background Worker de liquidación
-- [ ] Auditoría de eventos
+- [ ] Auditoría de eventos (pujas rechazadas y anti-sniping ya se auditan; falta lo disparado por el Worker y las acreditaciones manuales)
 - [ ] Documentación Swagger completa.
