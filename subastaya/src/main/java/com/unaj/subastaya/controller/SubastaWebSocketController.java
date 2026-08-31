@@ -13,7 +13,7 @@ public class SubastaWebSocketController {
 
     private final SubastaService subastaService;
 
-    @SubscribeMapping("/topic/subastas/{id}")
+    @SubscribeMapping("/subastas/{id}")
     public SubastaEvento estadoAlSuscribir(@DestinationVariable("id") Long subastaId) {
         return subastaService.estadoActual(subastaId);
     }
