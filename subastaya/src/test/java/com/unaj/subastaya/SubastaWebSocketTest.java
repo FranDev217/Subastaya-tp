@@ -1,6 +1,7 @@
 package com.unaj.subastaya;
 
 import com.unaj.subastaya.dto.SubastaEvento;
+import com.unaj.subastaya.dto.TipoEvento;
 import com.unaj.subastaya.model.EstadoSubasta;
 import com.unaj.subastaya.service.SubastaNotificador;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class SubastaWebSocketTest {
 
         session.disconnect();
         assertThat(evento).isNotNull();
-        assertThat(evento.tipo()).isEqualTo(SubastaEvento.TipoEvento.ESTADO_ACTUAL);
+        assertThat(evento.tipo()).isEqualTo(TipoEvento.ESTADO_ACTUAL);
         assertThat(evento.subastaId()).isEqualTo(SUBASTA_ID);
         assertThat(evento.fechaFin()).isNotNull();
     }
@@ -57,7 +58,7 @@ class SubastaWebSocketTest {
         session.subscribe("/topic/subastas/" + SUBASTA_ID, frameHandler(eventos));
 
         SubastaEvento evento = new SubastaEvento(
-                SubastaEvento.TipoEvento.NUEVA_PUJA,
+                TipoEvento.NUEVA_PUJA,
                 SUBASTA_ID,
                 EstadoSubasta.ACTIVA,
                 new BigDecimal("47000"),
@@ -70,7 +71,7 @@ class SubastaWebSocketTest {
 
         session.disconnect();
         assertThat(recibido).isNotNull();
-        assertThat(recibido.tipo()).isEqualTo(SubastaEvento.TipoEvento.NUEVA_PUJA);
+        assertThat(recibido.tipo()).isEqualTo(TipoEvento.NUEVA_PUJA);
         assertThat(recibido.montoActual()).isEqualByComparingTo("47000");
     }
 

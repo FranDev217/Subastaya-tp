@@ -3,6 +3,7 @@ package com.unaj.subastaya.controller;
 import com.unaj.subastaya.dto.PujaRequest;
 import com.unaj.subastaya.dto.PujaResponse;
 import com.unaj.subastaya.dto.SubastaEvento;
+import com.unaj.subastaya.dto.TipoEvento;
 import com.unaj.subastaya.model.EstadoSubasta;
 import com.unaj.subastaya.service.PujaService;
 import com.unaj.subastaya.service.SubastaNotificador;
@@ -29,7 +30,7 @@ public class PujaController {
         PujaResponse puja = pujaService.registrarPuja(subastaId, request);
 
         SubastaEvento evento = new SubastaEvento(
-                SubastaEvento.TipoEvento.NUEVA_PUJA,
+                TipoEvento.NUEVA_PUJA,
                 puja.subastaId(),
                 EstadoSubasta.ACTIVA,
                 puja.monto(),
