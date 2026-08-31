@@ -15,6 +15,7 @@ import com.unaj.subastaya.repository.PujaRepository;
 import com.unaj.subastaya.repository.SubastaRepository;
 import com.unaj.subastaya.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,6 +67,10 @@ public class PujaService {
         } catch (SaldoInsuficienteException ex) {
             auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, "PUJA_RECHAZADA",
                     request.compradorId(), ex.getMessage());
+            throw ex;
+        } catch (ObjectOptimisticLockingFailureException ex) {
+            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, "PUJA_RECHAZADA",
+                    request.compradorId(), "Conflicto de concurrencia al congelar el saldo del comprador");
             throw ex;
         }
 
