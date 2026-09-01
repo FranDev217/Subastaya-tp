@@ -5,7 +5,6 @@ import com.unaj.subastaya.dto.TipoEvento;
 import com.unaj.subastaya.model.EstadoSubasta;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -13,14 +12,12 @@ import org.springframework.stereotype.Service;
  * Cierra las subastas que ya vencieron: las liquida si tienen pujas o las marca
  * DESIERTA si no recibió ninguna, y difunde el cierre por WebSocket.
  *
- * <p>El bean se puede desactivar con {@code subastaya.worker.enabled=false}, que
- * es lo que hacen los tests para que la tarea no cierre las subastas del seed
- * mientras corren.</p>
+ * <p>El initialDelay es configurable para que los tests puedan invocar el método
+ * a mano sin que la tarea se dispare sola apenas arranca el contexto.</p>
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "subastaya.worker.enabled", matchIfMissing = true)
 public class SubastaLiquidacionWorker {
 
     private static final long INTERVALO_ENTRE_CORRIDAS_MS = 60_000;
@@ -29,7 +26,8 @@ public class SubastaLiquidacionWorker {
     private final SubastaService subastaService;
     private final SubastaNotificador subastaNotificador;
 
-    @Scheduled(fixedDelay = INTERVALO_ENTRE_CORRIDAS_MS)
+    @Scheduled(fixedDelay = INTERVALO_ENTRE_CORRIDAS_MS,
+            initialDelayString = "${subastaya.worker.initial-delay-ms:0}")
     public void cerrarSubastasVencidas() {
         liquidacionService.obtenerSubastasVencidas()
                 .forEach(subasta -> cerrar(subasta.getId()));
