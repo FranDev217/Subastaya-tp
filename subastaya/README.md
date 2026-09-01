@@ -34,8 +34,9 @@ Trabajo Práctico de la materia Proyecto de Software - Ing. en Informática.
     - Cliente se suscribe a `/topic/subastas/{id}` -> recibe broadcast de `NUEVA_PUJA`, `EXTENSION_TIEMPO`, `FINALIZADA`/`DESIERTA`.
     - Flujo: `POST /api/v1/subastas/{id}/pujas` -> `SubastaNotificador` -> `SimpMessagingTemplate.convertAndSend("/topic/...")`.
     - Tests en `SubastaWebSocketTest.java` con `WebSocketStompClient` real y `BlockingQueue`.
-- **Background Worker:** un proceso `@Scheduled` verifica periódicamente las
-  subastas vencidas para liquidarlas o marcarlas como `DESIERTA`.
+- **Background Worker:** un proceso `@Scheduled` verifica cada 60s las
+  subastas vencidas, las liquida o marca `DESIERTA`, y registra el cierre
+  en `auditoria_log` (ver sección dedicada más abajo).
 - **Auditoría:** los cambios críticos (cambios de estado, extensiones por
   anti-sniping, pujas rechazadas, acreditaciones manuales) quedan
   registrados de forma inmutable en una tabla de `AuditLog`.
@@ -121,6 +122,28 @@ Ejemplo contra la subasta "Notebook Gamer RTX 4070" (id `1`) y el comprador
 `comprador2@test.com` (id `3`), ajustando el `monto` a uno válido según el
 estado actual de la subasta:
 
+## Background Worker de liquidación
+
+Un proceso `@Scheduled` (`SubastaLiquidacionWorker`) corre cada 60 segundos,
+busca subastas `ACTIVA` con `fechaFin` vencida y las cierra:
+
+- **Con ganador:** transfiere el saldo retenido del comprador al vendedor
+  (`BilleteraService.pagar` / `cobrar`), registra `PAGO`/`COBRO` en el Ledger
+  y marca la subasta `FINALIZADA`.
+- **Sin pujas:** marca la subasta `DESIERTA`.
+
+Todo el cierre de una subasta ocurre en una única transacción: si falla el
+débito, no se acredita al vendedor ni se cambia el estado, y la subasta se
+reprocesa en la corrida siguiente. Un error en una subasta no afecta a las
+demás. Cada cierre queda registrado en `auditoria_log` con acción
+`CIERRE_WORKER` y `usuario_id = null` (acción del sistema), y se difunde por
+WebSocket (`TipoEvento.FINALIZADA` / `DESIERTA`).
+
+En tests, el disparo automático se posterga con
+`-Dsubastaya.worker.initial-delay-ms=3600000` (argLine de Surefire) para no
+consumir el seed; los tests invocan `cerrarSubastasVencidas()` manualmente.
+Ver `SubastaLiquidacionWorkerTest`.
+
 ```bash
 BODY='{"compradorId":3,"monto":48000}'
 
@@ -166,6 +189,6 @@ además queda registrado en `auditoria_log` con acción `PUJA_RECHAZADA`.
 - [x] Lógica de escrow atómico
 - [x] Regla anti-sniping
 - [x] WebSockets - sala de subastas en vivo
-- [ ] Background Worker de liquidación
+- [x] Background Worker de liquidación
 - [ ] Auditoría de eventos (pujas rechazadas y anti-sniping ya se auditan; falta lo disparado por el Worker y las acreditaciones manuales)
 - [ ] Documentación Swagger completa.

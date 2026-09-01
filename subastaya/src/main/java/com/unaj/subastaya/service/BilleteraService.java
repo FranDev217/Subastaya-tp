@@ -57,6 +57,27 @@ public class BilleteraService {
         registrarMovimiento(billetera, TipoMovimiento.LIBERACION, monto, subasta);
     }
 
+    // Debita el saldo que el comprador tenía congelado por su puja ganadora.
+    // El disponible no cambia: esos fondos ya se habían descontado al congelar.
+    @Transactional
+    public void pagar(Long usuarioId, BigDecimal monto, Subasta subasta) {
+        Billetera billetera = obtenerBilletera(usuarioId);
+        if (billetera.getSaldoRetenido().compareTo(monto) < 0) {
+            throw new SaldoInsuficienteException(usuarioId, monto, billetera.getSaldoRetenido());
+        }
+        billetera.setSaldoRetenido(billetera.getSaldoRetenido().subtract(monto));
+        billetera.setSaldoTotal(billetera.getSaldoTotal().subtract(monto));
+        registrarMovimiento(billetera, TipoMovimiento.PAGO, monto, subasta);
+    }
+
+    @Transactional
+    public void cobrar(Long usuarioId, BigDecimal monto, Subasta subasta) {
+        Billetera billetera = obtenerBilletera(usuarioId);
+        billetera.setSaldoTotal(billetera.getSaldoTotal().add(monto));
+        billetera.setSaldoDisponible(billetera.getSaldoDisponible().add(monto));
+        registrarMovimiento(billetera, TipoMovimiento.COBRO, monto, subasta);
+    }
+
     private Billetera obtenerBilletera(Long usuarioId) {
         return billeteraRepository.findByUsuarioId(usuarioId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
