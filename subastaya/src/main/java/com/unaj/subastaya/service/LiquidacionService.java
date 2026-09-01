@@ -4,6 +4,7 @@ import com.unaj.subastaya.exception.RecursoNoEncontradoException;
 import com.unaj.subastaya.model.EstadoSubasta;
 import com.unaj.subastaya.model.Puja;
 import com.unaj.subastaya.model.Subasta;
+import com.unaj.subastaya.model.TipoEntidadAuditoria;
 import com.unaj.subastaya.repository.PujaRepository;
 import com.unaj.subastaya.repository.SubastaRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class LiquidacionService {
     private final SubastaRepository subastaRepository;
     private final PujaRepository pujaRepository;
     private final BilleteraService billeteraService;
+    private final AuditoriaLogService auditoriaLogService;
 
     /**
      * Subastas que ya pasaron su fecha de cierre y todavía figuran como ACTIVA,
@@ -33,7 +35,9 @@ public class LiquidacionService {
     }
 
     /**
-     * Adjudica una subasta ya vencida: la marca DESIERTA si no recibió pujas.
+     * Adjudica una subasta ya vencida: la liquida si tiene pujas o la marca
+     * DESIERTA si no recibió ninguna. En ambos casos el cierre queda registrado
+     * en el Audit Log con usuario nulo, porque la acción la ejecuta el Worker.
      *
      * <p>Se revalida el estado y la fecha de cierre dentro de la transacción porque
      * entre la consulta del Worker y este momento puede haber entrado una puja
@@ -62,6 +66,8 @@ public class LiquidacionService {
 
     private void marcarDesierta(Subasta subasta) {
         subasta.setEstado(EstadoSubasta.DESIERTA);
+        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(), "CIERRE_WORKER", null,
+                "Cerrada como DESIERTA por el Worker: venció el " + subasta.getFechaFin() + " sin ninguna puja");
     }
 
     /**
@@ -78,6 +84,11 @@ public class LiquidacionService {
         billeteraService.cobrar(subasta.getVendedor().getId(), montoVenta, subasta);
 
         subasta.setEstado(EstadoSubasta.FINALIZADA);
+
+        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(), "CIERRE_WORKER", null,
+                "Adjudicada por el Worker al usuario " + pujaGanadora.getComprador().getId() + " por $" + montoVenta
+                        + ". Liquidación: PAGO del comprador y COBRO al vendedor "
+                        + subasta.getVendedor().getId());
     }
 
     private boolean estaVencida(Subasta subasta) {
