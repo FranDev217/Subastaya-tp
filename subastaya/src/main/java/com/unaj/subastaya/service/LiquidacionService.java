@@ -44,24 +44,27 @@ public class LiquidacionService {
      * (y con ella una extensión por anti-sniping) o puede haber cerrado la subasta
      * otra instancia del proceso. En ese caso no se hace nada y la subasta se
      * reprocesa en la siguiente corrida.</p>
+     *
+     * @return el estado al que quedó la subasta, o vacío si no correspondía cerrarla.
      */
     @Transactional
-    public void cerrarSubasta(Long subastaId) {
+    public Optional<EstadoSubasta> cerrarSubasta(Long subastaId) {
         Subasta subasta = subastaRepository.findById(subastaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Subasta " + subastaId + " no encontrada"));
 
         if (subasta.getEstado() != EstadoSubasta.ACTIVA || !estaVencida(subasta)) {
-            return;
+            return Optional.empty();
         }
 
         Optional<Puja> pujaGanadora = pujaRepository.findTopBySubastaIdOrderByMontoDesc(subastaId);
 
         if (pujaGanadora.isEmpty()) {
             marcarDesierta(subasta);
-            return;
+            return Optional.of(EstadoSubasta.DESIERTA);
         }
 
         liquidar(subasta, pujaGanadora.get());
+        return Optional.of(EstadoSubasta.FINALIZADA);
     }
 
     private void marcarDesierta(Subasta subasta) {
