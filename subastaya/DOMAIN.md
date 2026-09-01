@@ -144,8 +144,12 @@ Proceso `@Scheduled` que, para cada subasta vencida (`fecha_fin` pasada y
 |---|---|---|---|
 | vendedor@test.com | 0 | 0 | 0 |
 | comprador1@test.com | 150.000 | 45.000 | 105.000 |
-| comprador2@test.com | 200.000 | 0 | 200.000 |
+| comprador2@test.com | 200.000 | 32.000 | 168.000 |
 | sinfondos@test.com | 500 | 0 | 500 |
+
+> `comprador2` tiene $32.000 retenidos porque registra la puja ganadora de la
+> subasta vencida del caso 4 (ver más abajo). Sin ese escrow congelado, el
+> Worker de liquidación (2.3) no tendría saldo retenido que debitar.
 
 **Categorías:** Tecnología, Coleccionables, Indumentaria, Vehículos.
 
