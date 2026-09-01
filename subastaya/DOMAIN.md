@@ -136,7 +136,20 @@ Proceso `@Scheduled` que, para cada subasta vencida (`fecha_fin` pasada y
   (debitar saldo retenido del comprador ganador, acreditar al vendedor,
   escribir en el `Ledger`) + `AuditoriaLog` de venta.
 - **Sin pujas**: pasa a `DESIERTA` + `AuditoriaLog` del cambio de estado.
-
+  **Implementación:**
+- `LiquidacionService.cerrarSubasta` re-valida `estado = ACTIVA` y `fecha_fin`
+  vencida al recargar la subasta dentro de la transacción, por si anti-sniping
+  extendió el plazo entre la consulta de vencidas y el cierre. Si no aplica, la
+  subasta queda como está y se reprocesa en la corrida siguiente.
+- Liquidación: débito al comprador antes que crédito al vendedor (si falta
+  saldo retenido, no se acredita ni se cierra la subasta). Cambio de estado +
+  ambas billeteras + Ledger + `AuditoriaLog` viajan en una única transacción.
+- `AuditoriaLog` del Worker: `accion = CIERRE_WORKER`, `usuario_id = null`
+  (acción del sistema); comprador/vendedor/monto quedan en el detalle.
+- Un error al cerrar una subasta puntual no frena el resto de la corrida
+  (queda logueada y se reintenta a los 60s).
+- `TipoEvento` suma `FINALIZADA` y `DESIERTA` para la difusión WebSocket del
+  cierre (ver sección 6).
 ## 3. Seed data obligatorio
 
 **Usuarios / Billeteras:**
@@ -186,7 +199,9 @@ consistencia en español y con la jerarquía recurso/subrecurso.
 
 - Si `Puja` necesita un estado propio (`ACEPTADA`/`RECHAZADA`) o si el
   rechazo solo se refleja en el `AuditoriaLog` sin persistir la puja.
-- Formato exacto de `detalle_json` en `AuditoriaLog` (por ahora, JSON libre).
+- Formato exacto de `detalle_json` en `AuditoriaLog`: por ahora se usa texto
+  plano (convención ya vigente en `PujaService` para `EXTENSION_TIEMPO`),
+  no JSON estructurado. Sigue abierto si se quiere formalizar un esquema.
 - Estrategia de paginación para `GET /api/v1/subastas`.
 
 
