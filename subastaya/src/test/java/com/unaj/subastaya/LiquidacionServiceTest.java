@@ -1,10 +1,13 @@
 package com.unaj.subastaya;
 
 import com.unaj.subastaya.exception.SaldoInsuficienteException;
+import com.unaj.subastaya.model.AuditoriaLog;
 import com.unaj.subastaya.model.Billetera;
 import com.unaj.subastaya.model.EstadoSubasta;
+import com.unaj.subastaya.model.TipoEntidadAuditoria;
 import com.unaj.subastaya.model.TipoMovimiento;
 import com.unaj.subastaya.model.TransaccionLedger;
+import com.unaj.subastaya.repository.AuditoriaLogRepository;
 import com.unaj.subastaya.repository.BilleteraRepository;
 import com.unaj.subastaya.repository.SubastaRepository;
 import com.unaj.subastaya.repository.TransaccionLedgerRepository;
@@ -15,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,6 +48,9 @@ class LiquidacionServiceTest {
 
     @Autowired
     private TransaccionLedgerRepository transaccionLedgerRepository;
+
+    @Autowired
+    private AuditoriaLogRepository auditoriaLogRepository;
 
     @Test
     void subastaVencidaSinPujasPasaADesierta() {
@@ -89,6 +96,34 @@ class LiquidacionServiceTest {
                 .findByBilleteraIdOrderByFechaDesc(billeteraDe(USUARIO_VENDEDOR).getId()))
                 .extracting(TransaccionLedger::getTipo, TransaccionLedger::getMonto)
                 .contains(tuple(TipoMovimiento.COBRO, MONTO_VENTA));
+    }
+
+    @Test
+    void cierreDesiertoQuedaRegistradoEnElAuditLog() {
+        liquidacionService.cerrarSubasta(SUBASTA_VENCIDA_SIN_PUJAS);
+
+        List<AuditoriaLog> auditoria = auditoriaLogRepository
+                .findByEntidadAndEntidadId(TipoEntidadAuditoria.SUBASTA, SUBASTA_VENCIDA_SIN_PUJAS);
+
+        assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly("CIERRE_WORKER");
+        assertThat(auditoria).allSatisfy(registro -> {
+            assertThat(registro.getUsuario()).isNull();
+            assertThat(registro.getDetalleJson()).contains("DESIERTA");
+        });
+    }
+
+    @Test
+    void cierreConGanadorQuedaRegistradoEnElAuditLog() {
+        liquidacionService.cerrarSubasta(SUBASTA_VENCIDA_CON_GANADOR);
+
+        List<AuditoriaLog> auditoria = auditoriaLogRepository
+                .findByEntidadAndEntidadId(TipoEntidadAuditoria.SUBASTA, SUBASTA_VENCIDA_CON_GANADOR);
+
+        assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly("CIERRE_WORKER");
+        assertThat(auditoria).allSatisfy(registro -> {
+            assertThat(registro.getUsuario()).isNull();
+            assertThat(registro.getDetalleJson()).contains(String.valueOf(USUARIO_COMPRADOR_GANADOR), "32000.00");
+        });
     }
 
     @Test
