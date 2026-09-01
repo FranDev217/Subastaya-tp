@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,7 @@ public class LiquidacionService {
 
     private final SubastaRepository subastaRepository;
     private final PujaRepository pujaRepository;
+    private final BilleteraService billeteraService;
 
     /**
      * Subastas que ya pasaron su fecha de cierre y todavía figuran como ACTIVA,
@@ -62,8 +64,20 @@ public class LiquidacionService {
         subasta.setEstado(EstadoSubasta.DESIERTA);
     }
 
+    /**
+     * Liquidación final: debita al comprador ganador y acredita al vendedor en la
+     * misma transacción en la que la subasta pasa a FINALIZADA, de modo que el
+     * cambio de estado, los dos movimientos de billetera y los asientos del Ledger
+     * se confirmen o se deshagan juntos.
+     */
     private void liquidar(Subasta subasta, Puja pujaGanadora) {
-        throw new UnsupportedOperationException("Liquidación con ganador: pendiente (paso 3)");
+        BigDecimal montoVenta = pujaGanadora.getMonto();
+
+        // primero el débito: si el comprador no tiene el saldo retenido, falla antes de acreditar al vendedor
+        billeteraService.pagar(pujaGanadora.getComprador().getId(), montoVenta, subasta);
+        billeteraService.cobrar(subasta.getVendedor().getId(), montoVenta, subasta);
+
+        subasta.setEstado(EstadoSubasta.FINALIZADA);
     }
 
     private boolean estaVencida(Subasta subasta) {
