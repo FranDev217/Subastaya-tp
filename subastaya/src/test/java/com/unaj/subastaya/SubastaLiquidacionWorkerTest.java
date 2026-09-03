@@ -5,6 +5,7 @@ import com.unaj.subastaya.dto.TipoEvento;
 import com.unaj.subastaya.model.AuditoriaLog;
 import com.unaj.subastaya.model.Billetera;
 import com.unaj.subastaya.model.EstadoSubasta;
+import com.unaj.subastaya.model.Subasta;
 import com.unaj.subastaya.model.TipoEntidadAuditoria;
 import com.unaj.subastaya.model.TipoMovimiento;
 import com.unaj.subastaya.model.TransaccionLedger;
@@ -13,6 +14,7 @@ import com.unaj.subastaya.repository.BilleteraRepository;
 import com.unaj.subastaya.repository.SubastaRepository;
 import com.unaj.subastaya.repository.TransaccionLedgerRepository;
 import com.unaj.subastaya.service.SubastaLiquidacionWorker;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +30,7 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -35,7 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "subastaya.worker.initial-delay-ms=600000")
 @Transactional
 class SubastaLiquidacionWorkerTest {
 
@@ -66,6 +70,21 @@ class SubastaLiquidacionWorkerTest {
 
     @Autowired
     private AuditoriaLogRepository auditoriaLogRepository;
+
+    // V2__seed.sql calcula fecha_fin como now() + intervalo EN EL MOMENTO en que Flyway
+    // corre la migracion, no en el momento del test. Notebook (25 min) y Figura (90 seg)
+    // solo estan vencidas si paso ese tiempo real desde que se creo la base, asi que las
+    // forzamos aca para que el test no dependa de cuanto tarde en arrancar quien lo corra.
+    @BeforeEach
+    void forzarVencimientoDeLasSubastasQueDebenCerrarse() {
+        marcarVencida(SUBASTA_NOTEBOOK);
+        marcarVencida(SUBASTA_FIGURA);
+    }
+
+    private void marcarVencida(Long subastaId) {
+        Subasta subasta = subastaRepository.findById(subastaId).orElseThrow();
+        subasta.setFechaFin(LocalDateTime.now().minusMinutes(1));
+    }
 
     @Test
     void cierraTodasLasVencidasYNoTocaLasProgramadas() {

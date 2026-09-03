@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 
-@SpringBootTest
+@SpringBootTest(properties = "subastaya.worker.initial-delay-ms=600000")
 @Transactional
 class LiquidacionServiceTest {
 
