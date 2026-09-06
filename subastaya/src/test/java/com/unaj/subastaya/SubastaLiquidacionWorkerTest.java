@@ -14,6 +14,7 @@ import com.unaj.subastaya.repository.BilleteraRepository;
 import com.unaj.subastaya.repository.SubastaRepository;
 import com.unaj.subastaya.repository.TransaccionLedgerRepository;
 import com.unaj.subastaya.service.SubastaLiquidacionWorker;
+import com.unaj.subastaya.service.SubastaNotificador;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,6 +61,9 @@ class SubastaLiquidacionWorkerTest {
 
     @Autowired
     private SubastaLiquidacionWorker worker;
+
+    @Autowired
+    private SubastaNotificador subastaNotificador;
 
     @Autowired
     private SubastaRepository subastaRepository;
@@ -155,6 +159,7 @@ class SubastaLiquidacionWorkerTest {
         BlockingQueue<SubastaEvento> eventos = new LinkedBlockingQueue<>();
         StompSession session = conectar();
         session.subscribe("/topic/subastas/" + SUBASTA_BICICLETA, frameHandler(eventos));
+        esperarSuscripcion(SUBASTA_BICICLETA, eventos);
 
         worker.cerrarSubastasVencidas();
 
@@ -173,6 +178,7 @@ class SubastaLiquidacionWorkerTest {
         BlockingQueue<SubastaEvento> eventos = new LinkedBlockingQueue<>();
         StompSession session = conectar();
         session.subscribe("/topic/subastas/" + SUBASTA_TECLADO, frameHandler(eventos));
+        esperarSuscripcion(SUBASTA_TECLADO, eventos);
 
         worker.cerrarSubastasVencidas();
 
@@ -198,6 +204,24 @@ class SubastaLiquidacionWorkerTest {
                 .findByBilleteraIdOrderByFechaDesc(billeteraDe(usuarioId).getId()).stream()
                 .filter(movimiento -> movimiento.getTipo() == tipo)
                 .toList();
+    }
+
+    private void esperarSuscripcion(Long subastaId, BlockingQueue<SubastaEvento> eventos) throws InterruptedException {
+        SubastaEvento probe = new SubastaEvento(
+                TipoEvento.ESTADO_ACTUAL,
+                subastaId,
+                EstadoSubasta.ACTIVA,
+                BigDecimal.ZERO,
+                LocalDateTime.now(),
+                null
+        );
+        SubastaEvento recibido = null;
+        for (int intento = 0; intento < 10 && recibido == null; intento++) {
+            subastaNotificador.notificar(subastaId, probe);
+            recibido = eventos.poll(300, TimeUnit.MILLISECONDS);
+        }
+        assertThat(recibido).isNotNull();
+        eventos.clear();
     }
 
     private StompSession conectar() throws Exception {
