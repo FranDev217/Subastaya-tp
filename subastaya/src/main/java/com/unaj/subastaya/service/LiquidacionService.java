@@ -1,6 +1,7 @@
 package com.unaj.subastaya.service;
 
 import com.unaj.subastaya.exception.RecursoNoEncontradoException;
+import com.unaj.subastaya.model.AccionAuditoria;
 import com.unaj.subastaya.model.EstadoSubasta;
 import com.unaj.subastaya.model.Puja;
 import com.unaj.subastaya.model.Subasta;
@@ -69,7 +70,7 @@ public class LiquidacionService {
 
     private void marcarDesierta(Subasta subasta) {
         subasta.setEstado(EstadoSubasta.DESIERTA);
-        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(), "CIERRE_WORKER", null,
+        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(), AccionAuditoria.CIERRE_WORKER, null,
                 "Cerrada como DESIERTA por el Worker: venció el " + subasta.getFechaFin() + " sin ninguna puja");
     }
 
@@ -88,7 +89,7 @@ public class LiquidacionService {
 
         subasta.setEstado(EstadoSubasta.FINALIZADA);
 
-        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(), "CIERRE_WORKER", null,
+        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(), AccionAuditoria.CIERRE_WORKER, null,
                 "Adjudicada por el Worker al usuario " + pujaGanadora.getComprador().getId() + " por $" + montoVenta
                         + ". Liquidación: PAGO del comprador y COBRO al vendedor "
                         + subasta.getVendedor().getId());

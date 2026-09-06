@@ -1,6 +1,7 @@
 package com.unaj.subastaya;
 
 import com.unaj.subastaya.exception.SaldoInsuficienteException;
+import com.unaj.subastaya.model.AccionAuditoria;
 import com.unaj.subastaya.model.AuditoriaLog;
 import com.unaj.subastaya.model.Billetera;
 import com.unaj.subastaya.model.EstadoSubasta;
@@ -107,7 +108,7 @@ class LiquidacionServiceTest {
         List<AuditoriaLog> auditoria = auditoriaLogRepository
                 .findByEntidadAndEntidadId(TipoEntidadAuditoria.SUBASTA, SUBASTA_VENCIDA_SIN_PUJAS);
 
-        assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly("CIERRE_WORKER");
+        assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly(AccionAuditoria.CIERRE_WORKER);
         assertThat(auditoria).allSatisfy(registro -> {
             assertThat(registro.getUsuario()).isNull();
             assertThat(registro.getDetalleJson()).contains("DESIERTA");
@@ -121,7 +122,7 @@ class LiquidacionServiceTest {
         List<AuditoriaLog> auditoria = auditoriaLogRepository
                 .findByEntidadAndEntidadId(TipoEntidadAuditoria.SUBASTA, SUBASTA_VENCIDA_CON_GANADOR);
 
-        assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly("CIERRE_WORKER");
+        assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly(AccionAuditoria.CIERRE_WORKER);
         assertThat(auditoria).allSatisfy(registro -> {
             assertThat(registro.getUsuario()).isNull();
             assertThat(registro.getDetalleJson()).contains(String.valueOf(USUARIO_COMPRADOR_GANADOR), "32000.00");
