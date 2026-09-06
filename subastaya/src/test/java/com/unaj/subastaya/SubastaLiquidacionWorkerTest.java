@@ -5,6 +5,7 @@ import com.unaj.subastaya.dto.TipoEvento;
 import com.unaj.subastaya.model.AuditoriaLog;
 import com.unaj.subastaya.model.Billetera;
 import com.unaj.subastaya.model.EstadoSubasta;
+import com.unaj.subastaya.model.Subasta;
 import com.unaj.subastaya.model.TipoEntidadAuditoria;
 import com.unaj.subastaya.model.TipoMovimiento;
 import com.unaj.subastaya.model.TransaccionLedger;
@@ -13,10 +14,13 @@ import com.unaj.subastaya.repository.BilleteraRepository;
 import com.unaj.subastaya.repository.SubastaRepository;
 import com.unaj.subastaya.repository.TransaccionLedgerRepository;
 import com.unaj.subastaya.service.SubastaLiquidacionWorker;
+import com.unaj.subastaya.service.SubastaNotificador;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.messaging.converter.JacksonJsonMessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
@@ -28,6 +32,7 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -35,7 +40,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "subastaya.worker.initial-delay-ms=600000")
+@Sql(scripts = "/sql/reset-seed.sql")
 @Transactional
 class SubastaLiquidacionWorkerTest {
 
@@ -56,6 +63,9 @@ class SubastaLiquidacionWorkerTest {
     private SubastaLiquidacionWorker worker;
 
     @Autowired
+    private SubastaNotificador subastaNotificador;
+
+    @Autowired
     private SubastaRepository subastaRepository;
 
     @Autowired
@@ -66,6 +76,21 @@ class SubastaLiquidacionWorkerTest {
 
     @Autowired
     private AuditoriaLogRepository auditoriaLogRepository;
+
+    // V2__seed.sql calcula fecha_fin como now() + intervalo EN EL MOMENTO en que Flyway
+    // corre la migracion, no en el momento del test. Notebook (25 min) y Figura (90 seg)
+    // solo estan vencidas si paso ese tiempo real desde que se creo la base, asi que las
+    // forzamos aca para que el test no dependa de cuanto tarde en arrancar quien lo corra.
+    @BeforeEach
+    void forzarVencimientoDeLasSubastasQueDebenCerrarse() {
+        marcarVencida(SUBASTA_NOTEBOOK);
+        marcarVencida(SUBASTA_FIGURA);
+    }
+
+    private void marcarVencida(Long subastaId) {
+        Subasta subasta = subastaRepository.findById(subastaId).orElseThrow();
+        subasta.setFechaFin(LocalDateTime.now().minusMinutes(1));
+    }
 
     @Test
     void cierraTodasLasVencidasYNoTocaLasProgramadas() {
@@ -134,6 +159,7 @@ class SubastaLiquidacionWorkerTest {
         BlockingQueue<SubastaEvento> eventos = new LinkedBlockingQueue<>();
         StompSession session = conectar();
         session.subscribe("/topic/subastas/" + SUBASTA_BICICLETA, frameHandler(eventos));
+        esperarSuscripcion(SUBASTA_BICICLETA, eventos);
 
         worker.cerrarSubastasVencidas();
 
@@ -152,6 +178,7 @@ class SubastaLiquidacionWorkerTest {
         BlockingQueue<SubastaEvento> eventos = new LinkedBlockingQueue<>();
         StompSession session = conectar();
         session.subscribe("/topic/subastas/" + SUBASTA_TECLADO, frameHandler(eventos));
+        esperarSuscripcion(SUBASTA_TECLADO, eventos);
 
         worker.cerrarSubastasVencidas();
 
@@ -177,6 +204,24 @@ class SubastaLiquidacionWorkerTest {
                 .findByBilleteraIdOrderByFechaDesc(billeteraDe(usuarioId).getId()).stream()
                 .filter(movimiento -> movimiento.getTipo() == tipo)
                 .toList();
+    }
+
+    private void esperarSuscripcion(Long subastaId, BlockingQueue<SubastaEvento> eventos) throws InterruptedException {
+        SubastaEvento probe = new SubastaEvento(
+                TipoEvento.ESTADO_ACTUAL,
+                subastaId,
+                EstadoSubasta.ACTIVA,
+                BigDecimal.ZERO,
+                LocalDateTime.now(),
+                null
+        );
+        SubastaEvento recibido = null;
+        for (int intento = 0; intento < 10 && recibido == null; intento++) {
+            subastaNotificador.notificar(subastaId, probe);
+            recibido = eventos.poll(300, TimeUnit.MILLISECONDS);
+        }
+        assertThat(recibido).isNotNull();
+        eventos.clear();
     }
 
     private StompSession conectar() throws Exception {

@@ -25,7 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "subastaya.worker.initial-delay-ms=600000")
 class SubastaWebSocketTest {
 
     private static final long SUBASTA_ID = 1L;
@@ -65,9 +66,16 @@ class SubastaWebSocketTest {
                 LocalDateTime.now(),
                 null
         );
-        subastaNotificador.notificar(SUBASTA_ID, evento);
 
-        SubastaEvento recibido = eventos.poll(5, TimeUnit.SECONDS);
+        // subscribe() encola el frame SUBSCRIBE de forma asincronica: el broker simple de
+        // Spring no confirma la suscripcion con un receipt, asi que no hay forma de esperar
+        // una confirmacion explicita. Reintentamos la publicacion en vez de asumir un delay
+        // fijo, para no perder el mensaje si el primer intento le gana la carrera al broker.
+        SubastaEvento recibido = null;
+        for (int intento = 0; intento < 10 && recibido == null; intento++) {
+            subastaNotificador.notificar(SUBASTA_ID, evento);
+            recibido = eventos.poll(300, TimeUnit.MILLISECONDS);
+        }
 
         session.disconnect();
         assertThat(recibido).isNotNull();

@@ -209,14 +209,20 @@ consistencia en español y con la jerarquía recurso/subrecurso.
 
 La subasta es un proceso colaborativo en vivo. No alcanza con REST porque el estado cambia por acciones de terceros.
 
-**Eventos de dominio que se difunden:**
+**Eventos de dominio que se difunden (`TipoEvento`):**
 - `ESTADO_ACTUAL`: snapshot al entrar a una subasta (precio, líder, fecha_fin, estado)
 - `NUEVA_PUJA`: una puja válida fue aceptada
-- `EXTENSION_TIEMPO`: anti-sniping disparado, nueva fecha_fin
 - `FINALIZADA` / `DESIERTA`: cierre por Worker
 
 **Canales:**
 - Petición: cliente pide estado inicial por `/app/subastas/{id}`
 - Difusión: servidor publica eventos por `/topic/subastas/{id}` a todos los suscriptores
 
-Invariante: toda puja aceptada por `POST /api/v1/subastas/{id}/pujas` DEBE generar un `NUEVA_PUJA` y, si aplica, un `EXTENSION_TIEMPO`. El Worker al cerrar DEBE generar `FINALIZADA` o `DESIERTA`.
+Invariante: toda puja aceptada por `POST /api/v1/subastas/{id}/pujas` DEBE generar un `NUEVA_PUJA`. El Worker al cerrar DEBE generar `FINALIZADA` o `DESIERTA`.
+
+Nota: la extensión por anti-sniping **no** es un evento WebSocket aparte — como
+solo puede dispararse al procesar una puja, viaja embebida en el mismo
+`NUEVA_PUJA` (el campo `fechaFin` del evento ya refleja la extensión, y
+`PujaResponse.extendidoPorAntiSniping` le dice al frontend si corresponde
+mostrar el aviso). No hace falta un `TipoEvento.EXTENSION_TIEMPO` separado
+porque nunca ocurre de forma independiente de una puja.
