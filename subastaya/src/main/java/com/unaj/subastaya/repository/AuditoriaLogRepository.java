@@ -9,4 +9,6 @@ import java.util.List;
 public interface AuditoriaLogRepository extends JpaRepository<AuditoriaLog, Long> {
 
     List<AuditoriaLog> findByEntidadAndEntidadId(TipoEntidadAuditoria entidad, Long entidadId);
+
+    List<AuditoriaLog> findByEntidadAndEntidadIdOrderByFechaDesc(TipoEntidadAuditoria entidad, Long entidadId);
 }

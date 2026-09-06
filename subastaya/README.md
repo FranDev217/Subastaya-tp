@@ -39,7 +39,7 @@ Trabajo Práctico de la materia Proyecto de Software - Ing. en Informática.
   en `auditoria_log` (ver sección dedicada más abajo).
 - **Auditoría:** los cambios críticos (cambios de estado, extensiones por
   anti-sniping, pujas rechazadas, acreditaciones manuales) quedan
-  registrados de forma inmutable en una tabla de `AuditLog`.
+  registrados de forma inmutable en `auditoria_log` (ver sección dedicada).
 
 
 
@@ -176,6 +176,30 @@ incrementado por la primera transacción y lanza
 traduce a `409 Conflict` en vez de un `500` genérico. El intento rechazado
 además queda registrado en `auditoria_log` con acción `PUJA_RECHAZADA`.
 
+## Auditoría de eventos y trazabilidad
+
+Tabla append-only `auditoria_log`. Acciones de usuario llevan `usuario_id`;
+las del Worker/sistema van con `usuario_id = null`. El rechazo de una puja
+usa `REQUIRES_NEW` para que el registro sobreviva el rollback.
+
+| Acción | Entidad | Cuándo |
+|---|---|---|
+| `CIERRE_WORKER` | `SUBASTA` | Worker pasa a `FINALIZADA` o `DESIERTA` |
+| `EXTENSION_TIEMPO` | `SUBASTA` | Anti-sniping extiende `fecha_fin` |
+| `PUJA_RECHAZADA` | `SUBASTA` | Validación de negocio o `409` de concurrencia |
+| `ACREDITACION_MANUAL` | `BILLETERA` | Depósito de saldo |
+
+Endpoints:
+
+```bash
+GET  /api/v1/auditoria?entidad=SUBASTA&entidadId=4
+GET  /api/v1/billeteras/{usuarioId}
+POST /api/v1/billeteras/{usuarioId}/depositos
+```
+
+El `POST` de depósito espera `{ "monto": 15000 }` y escribe `DEPOSITO` en el
+Ledger más `ACREDITACION_MANUAL` en la misma transacción.
+
 ## Convenciones de trabajo
 
 - Ramas de trabajo: `feature/nombre-de-la-funcionalidad`
@@ -190,5 +214,5 @@ además queda registrado en `auditoria_log` con acción `PUJA_RECHAZADA`.
 - [x] Regla anti-sniping
 - [x] WebSockets - sala de subastas en vivo
 - [x] Background Worker de liquidación
-- [ ] Auditoría de eventos (pujas rechazadas y anti-sniping ya se auditan; falta lo disparado por el Worker y las acreditaciones manuales)
+- [x] Auditoría de eventos (cierre Worker, anti-sniping, pujas rechazadas, acreditaciones manuales)
 - [ ] Documentación Swagger completa.

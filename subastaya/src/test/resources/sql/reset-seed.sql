@@ -25,5 +25,5 @@ UPDATE billetera b
 UPDATE subasta SET estado = 'ACTIVA' WHERE id IN (1, 2, 4, 5);
 UPDATE subasta SET estado = 'PROGRAMADA' WHERE id = 3;
 
-DELETE FROM auditoria_log WHERE accion = 'CIERRE_WORKER';
+DELETE FROM auditoria_log;
 DELETE FROM transaccion_ledger WHERE tipo IN ('PAGO', 'COBRO');

@@ -3,8 +3,10 @@ package com.unaj.subastaya.service;
 import com.unaj.subastaya.dto.BilleteraResponse;
 import com.unaj.subastaya.exception.RecursoNoEncontradoException;
 import com.unaj.subastaya.exception.SaldoInsuficienteException;
+import com.unaj.subastaya.model.AccionAuditoria;
 import com.unaj.subastaya.model.Billetera;
 import com.unaj.subastaya.model.Subasta;
+import com.unaj.subastaya.model.TipoEntidadAuditoria;
 import com.unaj.subastaya.model.TipoMovimiento;
 import com.unaj.subastaya.model.TransaccionLedger;
 import com.unaj.subastaya.repository.BilleteraRepository;
@@ -21,6 +23,7 @@ public class BilleteraService {
 
     private final BilleteraRepository billeteraRepository;
     private final TransaccionLedgerRepository transaccionLedgerRepository;
+    private final AuditoriaLogService auditoriaLogService;
 
     @Transactional(readOnly = true)
     public BilleteraResponse obtenerSaldo(Long usuarioId) {
@@ -33,6 +36,14 @@ public class BilleteraService {
         billetera.setSaldoTotal(billetera.getSaldoTotal().add(monto));
         billetera.setSaldoDisponible(billetera.getSaldoDisponible().add(monto));
         registrarMovimiento(billetera, TipoMovimiento.DEPOSITO, monto, null);
+        auditoriaLogService.registrar(
+                TipoEntidadAuditoria.BILLETERA,
+                billetera.getId(),
+                AccionAuditoria.ACREDITACION_MANUAL,
+                usuarioId,
+                "Acreditación manual de $" + monto
+                        + ". Saldo total: " + billetera.getSaldoTotal()
+                        + ", disponible: " + billetera.getSaldoDisponible());
         return toResponse(billetera);
     }
 

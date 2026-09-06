@@ -2,6 +2,7 @@ package com.unaj.subastaya;
 
 import com.unaj.subastaya.dto.SubastaEvento;
 import com.unaj.subastaya.dto.TipoEvento;
+import com.unaj.subastaya.model.AccionAuditoria;
 import com.unaj.subastaya.model.AuditoriaLog;
 import com.unaj.subastaya.model.Billetera;
 import com.unaj.subastaya.model.EstadoSubasta;
@@ -146,12 +147,12 @@ class SubastaLiquidacionWorkerTest {
         List<AuditoriaLog> auditoria = auditoriaLogRepository
                 .findByEntidadAndEntidadId(TipoEntidadAuditoria.SUBASTA, SUBASTA_BICICLETA);
 
-        assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly("CIERRE_WORKER");
+        assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly(AccionAuditoria.CIERRE_WORKER);
         assertThat(auditoria).allSatisfy(registro -> assertThat(registro.getUsuario()).isNull());
 
         assertThat(auditoriaLogRepository.findByEntidadAndEntidadId(TipoEntidadAuditoria.SUBASTA, SUBASTA_TECLADO))
                 .extracting(AuditoriaLog::getAccion)
-                .containsExactly("CIERRE_WORKER");
+                .containsExactly(AccionAuditoria.CIERRE_WORKER);
     }
 
     @Test

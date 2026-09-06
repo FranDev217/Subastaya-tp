@@ -6,6 +6,7 @@ import com.unaj.subastaya.exception.MontoInvalidoException;
 import com.unaj.subastaya.exception.RecursoNoEncontradoException;
 import com.unaj.subastaya.exception.SaldoInsuficienteException;
 import com.unaj.subastaya.exception.SubastaNoActivaException;
+import com.unaj.subastaya.model.AccionAuditoria;
 import com.unaj.subastaya.model.EstadoSubasta;
 import com.unaj.subastaya.model.Puja;
 import com.unaj.subastaya.model.Subasta;
@@ -43,7 +44,7 @@ public class PujaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Subasta " + subastaId + " no encontrada"));
 
         if (subasta.getEstado() != EstadoSubasta.ACTIVA) {
-            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, "PUJA_RECHAZADA",
+            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, AccionAuditoria.PUJA_RECHAZADA,
                     request.compradorId(), "Subasta no activa (estado=" + subasta.getEstado() + ")");
             throw new SubastaNoActivaException(subastaId);
         }
@@ -53,7 +54,7 @@ public class PujaService {
         BigDecimal montoMinimo = montoActual.add(subasta.getIncrementoMinimo());
 
         if (request.monto().compareTo(montoMinimo) < 0) {
-            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, "PUJA_RECHAZADA",
+            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, AccionAuditoria.PUJA_RECHAZADA,
                     request.compradorId(), "Monto " + request.monto() + " menor al mínimo requerido " + montoMinimo);
             throw new MontoInvalidoException(request.monto(), montoMinimo);
         }
@@ -64,37 +65,38 @@ public class PujaService {
 
         try {
             billeteraService.congelarSaldo(comprador.getId(), request.monto(), subasta);
+
+            pujaLiderActual.ifPresent(pujaAnterior -> billeteraService.liberarSaldo(
+                    pujaAnterior.getComprador().getId(), pujaAnterior.getMonto(), subasta));
+
+            Puja puja = pujaRepository.save(Puja.builder()
+                    .subasta(subasta)
+                    .comprador(comprador)
+                    .monto(request.monto())
+                    .build());
+
+            boolean extendida = aplicarAntiSnipingSiCorresponde(subasta);
+            subastaRepository.flush();
+
+            return new PujaResponse(
+                    puja.getId(),
+                    subasta.getId(),
+                    comprador.getId(),
+                    comprador.getNombre(),
+                    puja.getMonto(),
+                    puja.getFechaPuja(),
+                    subasta.getFechaFin(),
+                    extendida
+            );
         } catch (SaldoInsuficienteException ex) {
-            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, "PUJA_RECHAZADA",
+            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, AccionAuditoria.PUJA_RECHAZADA,
                     request.compradorId(), ex.getMessage());
             throw ex;
         } catch (ObjectOptimisticLockingFailureException ex) {
-            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, "PUJA_RECHAZADA",
-                    request.compradorId(), "Conflicto de concurrencia al congelar el saldo del comprador");
+            auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, AccionAuditoria.PUJA_RECHAZADA,
+                    request.compradorId(), "Conflicto de concurrencia al registrar la puja");
             throw ex;
         }
-
-        pujaLiderActual.ifPresent(pujaAnterior -> billeteraService.liberarSaldo(
-                pujaAnterior.getComprador().getId(), pujaAnterior.getMonto(), subasta));
-
-        Puja puja = pujaRepository.save(Puja.builder()
-                .subasta(subasta)
-                .comprador(comprador)
-                .monto(request.monto())
-                .build());
-
-        boolean extendida = aplicarAntiSnipingSiCorresponde(subasta);
-
-        return new PujaResponse(
-                puja.getId(),
-                subasta.getId(),
-                comprador.getId(),
-                comprador.getNombre(),
-                puja.getMonto(),
-                puja.getFechaPuja(),
-                subasta.getFechaFin(),
-                extendida
-        );
     }
 
     private boolean aplicarAntiSnipingSiCorresponde(Subasta subasta) {
@@ -104,7 +106,7 @@ public class PujaService {
         }
         LocalDateTime fechaFinAnterior = subasta.getFechaFin();
         subasta.setFechaFin(fechaFinAnterior.plusMinutes(EXTENSION_ANTI_SNIPING_MINUTOS));
-        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(), "EXTENSION_TIEMPO", null,
+        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(), AccionAuditoria.EXTENSION_TIEMPO, null,
                 "Extendida de " + fechaFinAnterior + " a " + subasta.getFechaFin() + " por anti-sniping");
         return true;
     }
