@@ -106,6 +106,16 @@ Eventos que **obligatoriamente** deben auditarse (según consigna 3.4):
 cambios de estado de subasta, extensiones anti-sniping, pujas rechazadas por
 concurrencia o validación de negocio, y acreditaciones manuales de saldo.
 
+**Implementación (2.4 cubierto):**
+- `CIERRE_WORKER` — Worker cierra como `FINALIZADA` o `DESIERTA` (`usuario_id = null`).
+- `EXTENSION_TIEMPO` — anti-sniping en `PujaService`.
+- `PUJA_RECHAZADA` — subasta inactiva, monto inválido, saldo insuficiente o
+  `409` de concurrencia (`Billetera` o `Subasta.version`). `registrarRechazo`
+  usa `REQUIRES_NEW` para sobrevivir el rollback. La puja rechazada **no** se
+  persiste en `puja`.
+- `ACREDITACION_MANUAL` — `BilleteraService.depositar`, entidad `BILLETERA`.
+- Consulta: `GET /api/v1/auditoria?entidad=&entidadId=` (sin PUT/DELETE).
+
 ## 2. Reglas de negocio
 
 ### 2.1 Escrow atómico (puja)
@@ -187,8 +197,9 @@ y el `saldo_retenido` de $45.000 de `comprador1`.
 | `GET /api/v1/subastas/{id}` | Detalle + estado + puja actual |
 | `GET /api/v1/subastas/{id}/pujas` | Historial de pujas de una subasta |
 | `POST /api/v1/subastas/{id}/pujas` | Nueva oferta (valida saldo, incremento, anti-sniping) |
-| `GET /api/v1/billeteras/{id}` o `/me` | Desglose de saldos |
-| `POST /api/v1/billeteras/{id}/depositos` | Acreditación simulada de fondos |
+| `GET /api/v1/billeteras/{usuarioId}` | Desglose de saldos |
+| `POST /api/v1/billeteras/{usuarioId}/depositos` | Acreditación simulada de fondos |
+| `GET /api/v1/auditoria?entidad=&entidadId=` | Trazabilidad de eventos de auditoría |
 
 Nombres de recursos en plural, sin verbos en la URL (según lineamiento de la
 consigna) — se ajustan levemente los ejemplos de la consigna
@@ -197,11 +208,11 @@ consistencia en español y con la jerarquía recurso/subrecurso.
 
 ## 5. Pendiente de definir
 
-- Si `Puja` necesita un estado propio (`ACEPTADA`/`RECHAZADA`) o si el
-  rechazo solo se refleja en el `AuditoriaLog` sin persistir la puja.
-- Formato exacto de `detalle_json` en `AuditoriaLog`: por ahora se usa texto
-  plano (convención ya vigente en `PujaService` para `EXTENSION_TIEMPO`),
-  no JSON estructurado. Sigue abierto si se quiere formalizar un esquema.
+- `Puja` no tiene estado `ACEPTADA`/`RECHAZADA`: el rechazo solo se refleja
+  en `AuditoriaLog` (`PUJA_RECHAZADA`) y no se persiste la fila en `puja`.
+- Formato exacto de `detalle_json` en `AuditoriaLog`: se usa texto plano
+  (convención vigente), no JSON estructurado. Sigue abierto si se quiere
+  formalizar un esquema.
 - Estrategia de paginación para `GET /api/v1/subastas`.
 
 
