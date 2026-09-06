@@ -65,37 +65,38 @@ public class PujaService {
 
         try {
             billeteraService.congelarSaldo(comprador.getId(), request.monto(), subasta);
+
+            pujaLiderActual.ifPresent(pujaAnterior -> billeteraService.liberarSaldo(
+                    pujaAnterior.getComprador().getId(), pujaAnterior.getMonto(), subasta));
+
+            Puja puja = pujaRepository.save(Puja.builder()
+                    .subasta(subasta)
+                    .comprador(comprador)
+                    .monto(request.monto())
+                    .build());
+
+            boolean extendida = aplicarAntiSnipingSiCorresponde(subasta);
+            subastaRepository.flush();
+
+            return new PujaResponse(
+                    puja.getId(),
+                    subasta.getId(),
+                    comprador.getId(),
+                    comprador.getNombre(),
+                    puja.getMonto(),
+                    puja.getFechaPuja(),
+                    subasta.getFechaFin(),
+                    extendida
+            );
         } catch (SaldoInsuficienteException ex) {
             auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, AccionAuditoria.PUJA_RECHAZADA,
                     request.compradorId(), ex.getMessage());
             throw ex;
         } catch (ObjectOptimisticLockingFailureException ex) {
             auditoriaLogService.registrarRechazo(TipoEntidadAuditoria.SUBASTA, subastaId, AccionAuditoria.PUJA_RECHAZADA,
-                    request.compradorId(), "Conflicto de concurrencia al congelar el saldo del comprador");
+                    request.compradorId(), "Conflicto de concurrencia al registrar la puja");
             throw ex;
         }
-
-        pujaLiderActual.ifPresent(pujaAnterior -> billeteraService.liberarSaldo(
-                pujaAnterior.getComprador().getId(), pujaAnterior.getMonto(), subasta));
-
-        Puja puja = pujaRepository.save(Puja.builder()
-                .subasta(subasta)
-                .comprador(comprador)
-                .monto(request.monto())
-                .build());
-
-        boolean extendida = aplicarAntiSnipingSiCorresponde(subasta);
-
-        return new PujaResponse(
-                puja.getId(),
-                subasta.getId(),
-                comprador.getId(),
-                comprador.getNombre(),
-                puja.getMonto(),
-                puja.getFechaPuja(),
-                subasta.getFechaFin(),
-                extendida
-        );
     }
 
     private boolean aplicarAntiSnipingSiCorresponde(Subasta subasta) {
