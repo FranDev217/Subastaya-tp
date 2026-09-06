@@ -22,11 +22,8 @@ UPDATE billetera b
        saldo_disponible = 500
  WHERE b.usuario_id = (SELECT id FROM usuario WHERE email = 'sinfondos@test.com');
 
-UPDATE subasta SET estado = 'ACTIVA' WHERE titulo = 'Notebook Gamer RTX 4070';
-UPDATE subasta SET estado = 'ACTIVA' WHERE titulo = 'Figura de colección edición limitada';
-UPDATE subasta SET estado = 'PROGRAMADA' WHERE titulo = 'Campera de cuero vintage';
-UPDATE subasta SET estado = 'ACTIVA' WHERE titulo = 'Bicicleta rodado 29';
-UPDATE subasta SET estado = 'ACTIVA' WHERE titulo = 'Teclado mecánico RGB';
+UPDATE subasta SET estado = 'ACTIVA' WHERE id IN (1, 2, 4, 5);
+UPDATE subasta SET estado = 'PROGRAMADA' WHERE id = 3;
 
 DELETE FROM auditoria_log WHERE accion = 'CIERRE_WORKER';
 DELETE FROM transaccion_ledger WHERE tipo IN ('PAGO', 'COBRO');
