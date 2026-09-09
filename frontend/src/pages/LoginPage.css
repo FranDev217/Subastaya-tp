@@ -1,0 +1,118 @@
+.login-page {
+  min-height: 100svh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 40px 32px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 32px;
+  text-align: center;
+}
+
+.login-subtitle {
+  margin: 0 0 8px;
+  text-align: center;
+  color: var(--text);
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.login-field input {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.login-field input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent-border);
+}
+
+.login-button {
+  font: inherit;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-button-secondary {
+  background: transparent;
+  color: var(--text-h);
+  border-color: var(--border);
+}
+
+.login-error {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.login-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+  text-align: center;
+  line-height: 145%;
+}
+
+.login-success {
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  text-align: center;
+}
+
+.login-welcome {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: var(--text-h);
+}
+
+.login-email {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
