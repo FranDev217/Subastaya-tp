@@ -1,5 +1,6 @@
 package com.unaj.subastaya.controller;
 
+import com.unaj.subastaya.dto.CategoriaResponse;
 import com.unaj.subastaya.dto.SubastaListadoResponse;
 import com.unaj.subastaya.model.EstadoSubasta;
 import com.unaj.subastaya.service.SubastaService;
@@ -32,5 +33,10 @@ public class SubastaController {
                 estado, categoriaId, precioMin, precioMax, sort);
 
         return ResponseEntity.ok(subastas);
+    }
+
+    @GetMapping("/categorias")
+    public ResponseEntity<List<CategoriaResponse>> listarCategorias() {
+        return ResponseEntity.ok(subastaService.obtenerCategorias());
     }
 }
