@@ -13,7 +13,7 @@ entidades JPA.
 | id | Long (PK) | |
 | email | String | único |
 | nombre | String | |
-| password_hash | String | |
+| password_hash | String | hash BCrypt real desde `V4__seed_passwords_bcrypt.sql` (ver 2.4) |
 | fecha_registro | datetime | |
 
 Relaciones: 1:1 con `Billetera`, 1:N con `Subasta` (como vendedor), 1:N con
@@ -160,6 +160,23 @@ Proceso `@Scheduled` que, para cada subasta vencida (`fecha_fin` pasada y
   (queda logueada y se reintenta a los 60s).
 - `TipoEvento` suma `FINALIZADA` y `DESIERTA` para la difusión WebSocket del
   cierre (ver sección 6).
+
+### 2.4 Autenticación (login)
+`POST /api/v1/auth/login` valida `email` + `password` contra `usuario` con
+`PasswordEncoder` (BCrypt, `spring-security-crypto`) y devuelve la identidad
+del usuario (`id`, `nombre`, `email`). No hay Spring Security completo ni
+sesión/token: es una validación de credenciales, no una capa de autorización.
+
+- Email inexistente o contraseña incorrecta → mismo `401` con mensaje
+  genérico (`CredencialesInvalidasException`), para no revelar cuál de los
+  dos datos era el incorrecto.
+- El frontend persiste la respuesta en `localStorage` y la reutiliza donde
+  hace falta identificar al usuario (billetera, pujas) — mismo patrón que ya
+  usa `PujaRequest.compradorId`.
+- Los `password_hash` de `V2__seed.sql` eran strings inventados (no BCrypt
+  válido); `V4__seed_passwords_bcrypt.sql` los reemplaza por un hash real de
+  `Password123!` para los 4 usuarios semilla.
+
 ## 3. Seed data obligatorio
 
 **Usuarios / Billeteras:**
@@ -192,6 +209,7 @@ y el `saldo_retenido` de $45.000 de `comprador1`.
 
 | Endpoint | Propósito |
 |---|---|
+| `POST /api/v1/auth/login` | Login: valida email + contraseña, devuelve la identidad del usuario |
 | `GET /api/v1/subastas` | Listado con paginación y filtros (estado, categoría, precio, orden) |
 | `POST /api/v1/subastas` | Creación de subasta |
 | `GET /api/v1/subastas/{id}` | Detalle + estado + puja actual |
@@ -214,6 +232,9 @@ consistencia en español y con la jerarquía recurso/subrecurso.
   (convención vigente), no JSON estructurado. Sigue abierto si se quiere
   formalizar un esquema.
 - Estrategia de paginación para `GET /api/v1/subastas`.
+- El login (2.4) no genera sesión/token: si más adelante hace falta proteger
+  endpoints por rol (ej. que solo el vendedor edite su subasta), va a hacer
+  falta sumar Spring Security completo (filtro + JWT o sesión) sobre esta base.
 
 
 ## 6. Tiempo real (dominio)
