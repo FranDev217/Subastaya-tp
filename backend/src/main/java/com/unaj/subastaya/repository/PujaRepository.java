@@ -11,4 +11,6 @@ public interface PujaRepository extends JpaRepository<Puja, Long> {
     List<Puja> findBySubastaIdOrderByFechaPujaDesc(Long subastaId);
 
     Optional<Puja> findTopBySubastaIdOrderByMontoDesc(Long subastaId);
+
+    long countBySubastaId(Long subastaId);
 }
