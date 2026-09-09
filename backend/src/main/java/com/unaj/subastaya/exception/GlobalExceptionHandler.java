@@ -19,6 +19,11 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<ErrorResponse> handleCredencialesInvalidas(CredencialesInvalidasException ex) {
+        return construir(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
     @ExceptionHandler(SubastaNoActivaException.class)
     public ResponseEntity<ErrorResponse> handleSubastaNoActiva(SubastaNoActivaException ex) {
         return construir(HttpStatus.BAD_REQUEST, ex.getMessage());

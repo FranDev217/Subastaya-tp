@@ -49,15 +49,19 @@ Trabajo Práctico de la materia Proyecto de Software - Ing. en Informática.
 - Docker Desktop
 - Un IDE compatible con Maven (recomendado: IntelliJ IDEA)
 - Git
+- Node.js 18+ (solo para el frontend, paso 5) — trae `corepack` incluido
 
 No es necesario instalar PostgreSQL manualmente: se levanta con Docker.
+Tampoco hace falta instalar `pnpm` por separado: corriendo
+`corepack enable` una sola vez por máquina, el comando `pnpm` (usado en el
+paso 5) queda disponible sin instalación aparte.
 
 ## Cómo levantar el proyecto
 
 1. **Clonar el repositorio**
 ```bash
    git clone https://github.com/TU_USUARIO/subastaya-tp.git
-   cd subastaya-tp/subastaya
+   cd subastaya-tp/backend
 ```
 
 2. **Levantar la base de datos con Docker**
@@ -74,7 +78,7 @@ Debería mostrar `subastaya-db` con estado `healthy`.
 
    En IntelliJ: `Run → Edit Configurations → Add new → Application`
     - Main class: `com.unaj.subastaya.SubastayaApplication`
-    - Module: `subastaya`
+    - Module: `backend`
     - JDK: 17 (o superior instalado)
 
    **Importante:** si tu sistema operativo usa una zona horaria que
@@ -93,19 +97,35 @@ estás en Argentina).
    Documentación interactiva (Swagger UI) en:
    `http://localhost:8080/swagger-ui.html`
 
+5. **Levantar el frontend** (opcional, para probar el login end-to-end)
+```bash
+   corepack enable   # una sola vez por máquina, si no tenés pnpm instalado
+   cd ../frontend
+   pnpm install
+   pnpm dev
+```
+   Queda disponible en `http://localhost:5173`. En desarrollo, Vite proxea
+   `/api/*` hacia `http://localhost:8080` (ver `frontend/vite.config.js`),
+   así no hace falta configurar CORS.
+
 ## Estructura del proyecto
 
-subastaya/
-├── src/main/java/com/unaj/subastaya/
-│ ├── controller/ # Endpoints REST
-│ ├── service/ # Lógica de negocio
-│ ├── repository/ # Acceso a datos (Spring Data JPA)
-│ ├── model/ # Entidades JPA
-│ └── dto/ # Objetos de transferencia (request/response)
-├── src/main/resources/
-│ ├── db/migration/ # Migraciones Flyway (V1__init.sql, etc.)
-│ └── application.properties
-└── docker-compose.yaml # Definición de PostgreSQL local
+subastaya-tp/
+├── backend/
+│ ├── src/main/java/com/unaj/subastaya/
+│ │ ├── controller/ # Endpoints REST
+│ │ ├── service/ # Lógica de negocio
+│ │ ├── repository/ # Acceso a datos (Spring Data JPA)
+│ │ ├── model/ # Entidades JPA
+│ │ └── dto/ # Objetos de transferencia (request/response)
+│ ├── src/main/resources/
+│ │ ├── db/migration/ # Migraciones Flyway (V1__init.sql, etc.)
+│ │ └── application.properties
+│ └── docker-compose.yaml # Definición de PostgreSQL local
+└── frontend/ # Vite + React
+  └── src/
+    ├── pages/ # Pantallas (ej. LoginPage)
+    └── api/ # Clientes fetch hacia el backend
 
 ![img.png](img.png)
 _(Se irá actualizando a medida que se agreguen módulos.)_
@@ -200,6 +220,35 @@ POST /api/v1/billeteras/{usuarioId}/depositos
 El `POST` de depósito espera `{ "monto": 15000 }` y escribe `DEPOSITO` en el
 Ledger más `ACREDITACION_MANUAL` en la misma transacción.
 
+## Autenticación (Login)
+
+Validación simple de credenciales — todavía no hay sesión ni token (no se
+agregó Spring Security completo, solo `spring-security-crypto` para poder
+hashear/verificar con BCrypt). El frontend guarda la respuesta en
+`localStorage` y la reutiliza donde haga falta (billetera, pujas), igual que
+ya se hacía pasando `compradorId` explícito en `PujaRequest`.
+
+```
+POST /api/v1/auth/login
+{ "email": "comprador1@test.com", "password": "Password123!" }
+```
+
+- `200 OK` → `{ "usuarioId": 2, "nombre": "Comprador Uno", "email": "comprador1@test.com" }`
+- `401 Unauthorized` → email inexistente o contraseña incorrecta (mismo
+  mensaje genérico en ambos casos, para no filtrar cuál de los dos falló)
+- `400 Bad Request` → campos vacíos o email con formato inválido
+
+Contraseña de prueba para los 4 usuarios semilla: **`Password123!`** (hash
+BCrypt real cargado por `V4__seed_passwords_bcrypt.sql` — los
+`password_hash` de `V2__seed.sql` eran strings inventados, nunca hubieran
+servido para autenticar).
+
+Frontend: `frontend/src/pages/LoginPage.jsx` consume este endpoint vía
+`frontend/src/api/authApi.js`. En desarrollo, Vite proxea `/api/*` hacia
+`http://localhost:8080` (`frontend/vite.config.js`), así no hace falta
+configurar CORS. Para probarlo end-to-end: levantar el backend
+(`./mvnw spring-boot:run`), y en otra terminal `cd frontend && pnpm install && pnpm dev`.
+
 ## Convenciones de trabajo
 
 - Ramas de trabajo: `feature/nombre-de-la-funcionalidad`
@@ -215,4 +264,5 @@ Ledger más `ACREDITACION_MANUAL` en la misma transacción.
 - [x] WebSockets - sala de subastas en vivo
 - [x] Background Worker de liquidación
 - [x] Auditoría de eventos (cierre Worker, anti-sniping, pujas rechazadas, acreditaciones manuales)
+- [x] Autenticación básica (login, sin sesión/token todavía)
 - [ ] Documentación Swagger completa.
