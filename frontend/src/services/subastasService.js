@@ -24,3 +24,13 @@ export async function obtenerSubastas({ estado, categoriaId, precioMin, precioMa
 
   return response.json()
 }
+
+export async function obtenerCategorias() {
+  const response = await fetch(`${API_BASE_URL}/subastas/categorias`)
+
+  if (!response.ok) {
+    throw new Error(`Error al obtener categorías: ${response.status} ${response.statusText}`)
+  }
+
+  return response.json()
+}
