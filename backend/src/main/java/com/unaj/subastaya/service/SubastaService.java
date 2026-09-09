@@ -1,5 +1,6 @@
 package com.unaj.subastaya.service;
 
+import com.unaj.subastaya.dto.CategoriaResponse;
 import com.unaj.subastaya.dto.PujaResponse;
 import com.unaj.subastaya.dto.SubastaEvento;
 import com.unaj.subastaya.dto.SubastaListadoResponse;
@@ -8,6 +9,7 @@ import com.unaj.subastaya.exception.RecursoNoEncontradoException;
 import com.unaj.subastaya.model.EstadoSubasta;
 import com.unaj.subastaya.model.Puja;
 import com.unaj.subastaya.model.Subasta;
+import com.unaj.subastaya.repository.CategoriaRepository;
 import com.unaj.subastaya.repository.PujaRepository;
 import com.unaj.subastaya.repository.SubastaRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class SubastaService {
 
     private final SubastaRepository subastaRepository;
     private final PujaRepository pujaRepository;
+    private final CategoriaRepository categoriaRepository;
 
     @Transactional(readOnly = true)
     public SubastaEvento estadoActual(Long subastaId) {
@@ -84,6 +87,13 @@ public class SubastaService {
                 subasta.getFechaFin(),
                 subasta.getEstado()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoriaResponse> obtenerCategorias() {
+        return categoriaRepository.findAll().stream()
+                .map(c -> new CategoriaResponse(c.getId(), c.getNombre()))
+                .toList();
     }
 
     private PujaResponse toResponse(Puja puja, Subasta subasta) {
