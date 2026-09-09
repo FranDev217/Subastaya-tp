@@ -2,8 +2,10 @@ package com.unaj.subastaya.service;
 
 import com.unaj.subastaya.dto.PujaResponse;
 import com.unaj.subastaya.dto.SubastaEvento;
+import com.unaj.subastaya.dto.SubastaListadoResponse;
 import com.unaj.subastaya.dto.TipoEvento;
 import com.unaj.subastaya.exception.RecursoNoEncontradoException;
+import com.unaj.subastaya.model.EstadoSubasta;
 import com.unaj.subastaya.model.Puja;
 import com.unaj.subastaya.model.Subasta;
 import com.unaj.subastaya.repository.PujaRepository;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +43,46 @@ public class SubastaService {
                 montoActual,
                 subasta.getFechaFin(),
                 ultimaPuja
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<SubastaListadoResponse> buscarSubastas(EstadoSubasta estado, Long categoriaId,
+                                                        BigDecimal precioMin, BigDecimal precioMax,
+                                                        String sort) {
+        List<Subasta> subastas = subastaRepository.buscarConFiltros(estado, categoriaId, precioMin, precioMax);
+
+        List<SubastaListadoResponse> respuestas = subastas.stream()
+                .map(this::toListadoResponse)
+                .toList();
+
+        if ("mayorPuja".equals(sort)) {
+            respuestas = respuestas.stream()
+                    .sorted(Comparator.comparing(SubastaListadoResponse::ofertaActual).reversed())
+                    .toList();
+        }
+
+        return respuestas;
+    }
+
+    private SubastaListadoResponse toListadoResponse(Subasta subasta) {
+        Puja ultimaPuja = pujaRepository.findTopBySubastaIdOrderByMontoDesc(subasta.getId()).orElse(null);
+        BigDecimal ofertaActual = ultimaPuja != null ? ultimaPuja.getMonto() : subasta.getPrecioBase();
+        long cantidadPujas = pujaRepository.countBySubastaId(subasta.getId());
+
+        return new SubastaListadoResponse(
+                subasta.getId(),
+                subasta.getTitulo(),
+                subasta.getDescripcion(),
+                subasta.getUrlImagen(),
+                subasta.getCategoria().getId(),
+                subasta.getCategoria().getNombre(),
+                subasta.getPrecioBase(),
+                ofertaActual,
+                (int) cantidadPujas,
+                subasta.getFechaInicio(),
+                subasta.getFechaFin(),
+                subasta.getEstado()
         );
     }
 
