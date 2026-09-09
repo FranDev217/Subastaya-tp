@@ -1,0 +1,162 @@
+.subasta-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.subasta-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.subasta-card__imagen-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.subasta-card__imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.subasta-card:hover .subasta-card__imagen {
+  transform: scale(1.05);
+}
+
+.subasta-card__badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.estado-activa .subasta-card__badge {
+  background: #10b981;
+  color: white;
+}
+
+.estado-programada .subasta-card__badge {
+  background: #f59e0b;
+  color: white;
+}
+
+.estado-finalizada .subasta-card__badge {
+  background: #6b7280;
+  color: white;
+}
+
+.estado-finalizada {
+  opacity: 0.7;
+}
+
+.subasta-card__contenido {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.subasta-card__titulo {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.subasta-card__categoria {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.subasta-card__oferta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.subasta-card__oferta-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.subasta-card__oferta-monto {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.subasta-card__info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: auto;
+}
+
+.subasta-card__pujas {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.subasta-card__tiempo {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  font-variant-numeric: tabular-nums;
+}
+
+.estado-activa .subasta-card__tiempo {
+  color: #10b981;
+}
+
+.estado-programada .subasta-card__tiempo {
+  color: #f59e0b;
+}
+
+.estado-finalizada .subasta-card__tiempo {
+  color: #6b7280;
+}
+
+@media (min-width: 768px) {
+  .subasta-card__imagen-container {
+    height: 220px;
+  }
+
+  .subasta-card__titulo {
+    font-size: 1.25rem;
+  }
+
+  .subasta-card__oferta-monto {
+    font-size: 1.75rem;
+  }
+}
