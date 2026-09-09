@@ -1,7 +1,7 @@
-import LoginPage from './pages/LoginPage'
+import CatalogoPage from './pages/CatalogoPage'
 
 function App() {
-  return <LoginPage />
+  return <CatalogoPage />
 }
 
 export default App
