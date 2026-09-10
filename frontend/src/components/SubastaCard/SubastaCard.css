@@ -60,7 +60,13 @@
   color: var(--text-inverse);
 }
 
-.estado-finalizada {
+.estado-desierta .subasta-card__badge {
+  background: #9ca3af;
+  color: var(--text-inverse);
+}
+
+.estado-finalizada,
+.estado-desierta {
   opacity: 0.7;
 }
 
@@ -143,7 +149,8 @@
   color: var(--color-warning);
 }
 
-.estado-finalizada .subasta-card__tiempo {
+.estado-finalizada .subasta-card__tiempo,
+.estado-desierta .subasta-card__tiempo {
   color: var(--color-neutral);
 }
 

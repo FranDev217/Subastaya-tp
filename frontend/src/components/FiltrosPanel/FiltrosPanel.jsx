@@ -53,7 +53,8 @@ function FiltrosPanel({ filtros, onFiltrosChange }) {
             { valor: null, label: 'Todas' },
             { valor: 'ACTIVA', label: 'Activas' },
             { valor: 'PROGRAMADA', label: 'Próximas' },
-            { valor: 'FINALIZADA', label: 'Finalizadas' }
+            { valor: 'FINALIZADA', label: 'Finalizadas' },
+            { valor: 'DESIERTA', label: 'Desiertas' }
           ].map((opcion) => (
             <button
               key={opcion.valor ?? 'todas'}
