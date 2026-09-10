@@ -8,54 +8,58 @@ entidades JPA.
 ## 1. Entidades
 
 ### Usuario
-| Campo | Tipo | Notas |
-|---|---|---|
-| id | Long (PK) | |
-| email | String | único |
-| nombre | String | |
-| password_hash | String | hash BCrypt real desde `V4__seed_passwords_bcrypt.sql` (ver 2.4) |
-| fecha_registro | datetime | |
+
+| Campo          | Tipo      | Notas                                                            |
+| -------------- | --------- | ---------------------------------------------------------------- |
+| id             | Long (PK) |                                                                  |
+| email          | String    | único                                                            |
+| nombre         | String    |                                                                  |
+| password_hash  | String    | hash BCrypt real desde `V4__seed_passwords_bcrypt.sql` (ver 2.4) |
+| fecha_registro | datetime  |                                                                  |
 
 Relaciones: 1:1 con `Billetera`, 1:N con `Subasta` (como vendedor), 1:N con
 `Puja` (como comprador), 1:N con `AuditoriaLog` (opcional, si la acción la
 disparó un usuario y no el Worker).
 
 ### Categoria
-| Campo | Tipo | Notas |
-|---|---|---|
-| id | Long (PK) | |
-| nombre | String | Tecnología, Coleccionables, Indumentaria, Vehículos (seed) |
-| url_icono | String | |
+
+| Campo     | Tipo      | Notas                                                      |
+| --------- | --------- | ---------------------------------------------------------- |
+| id        | Long (PK) |                                                            |
+| nombre    | String    | Tecnología, Coleccionables, Indumentaria, Vehículos (seed) |
+| url_icono | String    |                                                            |
 
 ### Subasta
-| Campo | Tipo | Notas |
-|---|---|---|
-| id | Long (PK) | |
-| vendedor_id | FK → Usuario | |
-| categoria_id | FK → Categoria | |
-| titulo | String | |
-| descripcion | String | |
-| url_imagen | String | |
-| precio_base | Decimal | > 0 |
-| incremento_minimo | Decimal | > 0 |
-| fecha_inicio | datetime | |
-| fecha_fin | datetime | > fecha_inicio; se extiende por anti-sniping |
-| estado | Enum | `PROGRAMADA`, `ACTIVA`, `FINALIZADA`, `DESIERTA` |
-| version | int | Optimistic Locking (obligatorio) |
+
+| Campo             | Tipo           | Notas                                            |
+| ----------------- | -------------- | ------------------------------------------------ |
+| id                | Long (PK)      |                                                  |
+| vendedor_id       | FK → Usuario   |                                                  |
+| categoria_id      | FK → Categoria |                                                  |
+| titulo            | String         |                                                  |
+| descripcion       | String         |                                                  |
+| url_imagen        | String         |                                                  |
+| precio_base       | Decimal        | > 0                                              |
+| incremento_minimo | Decimal        | > 0                                              |
+| fecha_inicio      | datetime       |                                                  |
+| fecha_fin         | datetime       | > fecha_inicio; se extiende por anti-sniping     |
+| estado            | Enum           | `PROGRAMADA`, `ACTIVA`, `FINALIZADA`, `DESIERTA` |
+| version           | int            | Optimistic Locking (obligatorio)                 |
 
 Transiciones de estado válidas:
 `PROGRAMADA → ACTIVA → (FINALIZADA | DESIERTA)`. `ACTIVA` puede reescribir su
 propio `fecha_fin` (anti-sniping) sin cambiar de estado.
 
 ### Billetera
-| Campo | Tipo | Notas |
-|---|---|---|
-| id | Long (PK) | |
-| usuario_id | FK → Usuario (1:1) | |
-| saldo_total | Decimal | |
-| saldo_retenido | Decimal | suma de pujas donde el usuario es líder vigente |
-| saldo_disponible | Decimal | `saldo_total - saldo_retenido` |
-| version | int | Optimistic Locking (obligatorio) |
+
+| Campo            | Tipo               | Notas                                           |
+| ---------------- | ------------------ | ----------------------------------------------- |
+| id               | Long (PK)          |                                                 |
+| usuario_id       | FK → Usuario (1:1) |                                                 |
+| saldo_total      | Decimal            |                                                 |
+| saldo_retenido   | Decimal            | suma de pujas donde el usuario es líder vigente |
+| saldo_disponible | Decimal            | `saldo_total - saldo_retenido`                  |
+| version          | int                | Optimistic Locking (obligatorio)                |
 
 Decisión a tomar en la migración: si `saldo_disponible` se persiste como
 columna redundante (recalculada dentro de la misma transacción que toca
@@ -65,26 +69,28 @@ invariante `saldo_disponible = saldo_total - saldo_retenido` debe mantenerse
 en cada operación de escrow.
 
 ### Puja
-| Campo | Tipo | Notas |
-|---|---|---|
-| id | Long (PK) | |
-| subasta_id | FK → Subasta | |
-| comprador_id | FK → Usuario | |
-| monto | Decimal | |
-| fecha_puja | datetime | |
+
+| Campo        | Tipo         | Notas |
+| ------------ | ------------ | ----- |
+| id           | Long (PK)    |       |
+| subasta_id   | FK → Subasta |       |
+| comprador_id | FK → Usuario |       |
+| monto        | Decimal      |       |
+| fecha_puja   | datetime     |       |
 
 No lleva `version`: una puja es un hecho inmutable, no se edita. La
 concurrencia se resuelve a nivel `Subasta`/`Billetera`.
 
 ### TransaccionLedger
-| Campo | Tipo | Notas |
-|---|---|---|
-| id | Long (PK) | |
-| billetera_id | FK → Billetera | |
-| tipo | Enum | `DEPOSITO`, `RETENCION`, `LIBERACION`, `PAGO`, `COBRO` |
-| monto | Decimal | |
-| fecha | datetime | |
-| subasta_id | FK → Subasta (nullable) | trazabilidad opcional |
+
+| Campo        | Tipo                    | Notas                                                  |
+| ------------ | ----------------------- | ------------------------------------------------------ |
+| id           | Long (PK)               |                                                        |
+| billetera_id | FK → Billetera          |                                                        |
+| tipo         | Enum                    | `DEPOSITO`, `RETENCION`, `LIBERACION`, `PAGO`, `COBRO` |
+| monto        | Decimal                 |                                                        |
+| fecha        | datetime                |                                                        |
+| subasta_id   | FK → Subasta (nullable) | trazabilidad opcional                                  |
 
 Es el libro mayor contable: cada movimiento de saldo (depósito manual,
 retención por puja, liberación por ser superado, pago del comprador ganador,
@@ -92,21 +98,23 @@ cobro del vendedor) debe dejar un registro acá dentro de la misma transacción
 que modifica `Billetera`.
 
 ### AuditoriaLog
-| Campo | Tipo | Notas |
-|---|---|---|
-| id | Long (PK) | |
-| entidad | String | `SUBASTA`, `BILLETERA`, `SISTEMA` |
-| entidad_id | Long | id del registro afectado |
-| accion | String | ej. `EXTENSION_TIEMPO`, `CIERRE_WORKER`, `PUJA_RECHAZADA`, `ACREDITACION_MANUAL` |
-| usuario_id | FK → Usuario (nullable) | null si la acción la ejecutó el Worker |
-| detalle_json | String/JSON | payload con los cambios |
-| fecha | datetime | |
+
+| Campo        | Tipo                    | Notas                                                                            |
+| ------------ | ----------------------- | -------------------------------------------------------------------------------- |
+| id           | Long (PK)               |                                                                                  |
+| entidad      | String                  | `SUBASTA`, `BILLETERA`, `SISTEMA`                                                |
+| entidad_id   | Long                    | id del registro afectado                                                         |
+| accion       | String                  | ej. `EXTENSION_TIEMPO`, `CIERRE_WORKER`, `PUJA_RECHAZADA`, `ACREDITACION_MANUAL` |
+| usuario_id   | FK → Usuario (nullable) | null si la acción la ejecutó el Worker                                           |
+| detalle_json | String/JSON             | payload con los cambios                                                          |
+| fecha        | datetime                |                                                                                  |
 
 Eventos que **obligatoriamente** deben auditarse (según consigna 3.4):
 cambios de estado de subasta, extensiones anti-sniping, pujas rechazadas por
 concurrencia o validación de negocio, y acreditaciones manuales de saldo.
 
 **Implementación (2.4 cubierto):**
+
 - `CIERRE_WORKER` — Worker cierra como `FINALIZADA` o `DESIERTA` (`usuario_id = null`).
 - `EXTENSION_TIEMPO` — anti-sniping en `PujaService`.
 - `PUJA_RECHAZADA` — subasta inactiva, monto inválido, saldo insuficiente o
@@ -119,7 +127,9 @@ concurrencia o validación de negocio, y acreditaciones manuales de saldo.
 ## 2. Reglas de negocio
 
 ### 2.1 Escrow atómico (puja)
+
 Al recibir `POST /api/auctions/{id}/bids`, dentro de una única transacción:
+
 1. Validar que la subasta esté `ACTIVA` → si no, `400`.
 2. Validar que el monto sea mayor a la puja actual + `incremento_minimo` →
    si no, `422`.
@@ -135,13 +145,16 @@ Un conflicto de versión (`version` de `Subasta` o `Billetera`) en el paso 4
 debe traducirse a `409 Conflict`, nunca a un `500`.
 
 ### 2.2 Anti-sniping
+
 Si la puja válida se registra a ≤ 60 segundos del `fecha_fin` de la subasta,
 extender `fecha_fin` en +2 minutos y registrar un `AuditoriaLog` de tipo
 `EXTENSION_TIEMPO`.
 
 ### 2.3 Background Worker (liquidación)
+
 Proceso `@Scheduled` que, para cada subasta vencida (`fecha_fin` pasada y
 `estado = ACTIVA`):
+
 - **Con pujas**: pasa a `FINALIZADA` y ejecuta una liquidación atómica
   (debitar saldo retenido del comprador ganador, acreditar al vendedor,
   escribir en el `Ledger`) + `AuditoriaLog` de venta.
@@ -162,6 +175,7 @@ Proceso `@Scheduled` que, para cada subasta vencida (`fecha_fin` pasada y
   cierre (ver sección 6).
 
 ### 2.4 Autenticación (login)
+
 `POST /api/v1/auth/login` valida `email` + `password` contra `usuario` con
 `PasswordEncoder` (BCrypt, `spring-security-crypto`) y devuelve la identidad
 del usuario (`id`, `nombre`, `email`). No hay Spring Security completo ni
@@ -194,6 +208,7 @@ sesión/token: es una validación de credenciales, no una capa de autorización.
 **Categorías:** Tecnología, Coleccionables, Indumentaria, Vehículos.
 
 **Subastas (5, casos de prueba):**
+
 1. Activa estándar — cierra en 20-30 min, 2 pujas previas, líder $45.000
    (retenido de `comprador1`, coherente con su billetera).
 2. Activa crítica — cierra en < 2 min (para probar alerta visual + anti-sniping).
@@ -207,17 +222,17 @@ y el `saldo_retenido` de $45.000 de `comprador1`.
 
 ## 4. API de referencia (a ampliar)
 
-| Endpoint | Propósito |
-|---|---|
-| `POST /api/v1/auth/login` | Login: valida email + contraseña, devuelve la identidad del usuario |
-| `GET /api/v1/subastas` | Listado con paginación y filtros (estado, categoría, precio, orden) |
-| `POST /api/v1/subastas` | Creación de subasta |
-| `GET /api/v1/subastas/{id}` | Detalle + estado + puja actual |
-| `GET /api/v1/subastas/{id}/pujas` | Historial de pujas de una subasta |
-| `POST /api/v1/subastas/{id}/pujas` | Nueva oferta (valida saldo, incremento, anti-sniping) |
-| `GET /api/v1/billeteras/{usuarioId}` | Desglose de saldos |
-| `POST /api/v1/billeteras/{usuarioId}/depositos` | Acreditación simulada de fondos |
-| `GET /api/v1/auditoria?entidad=&entidadId=` | Trazabilidad de eventos de auditoría |
+| Endpoint                                        | Propósito                                                           |
+| ----------------------------------------------- | ------------------------------------------------------------------- |
+| `POST /api/v1/auth/login`                       | Login: valida email + contraseña, devuelve la identidad del usuario |
+| `GET /api/v1/subastas`                          | Listado con paginación y filtros (estado, categoría, precio, orden) |
+| `POST /api/v1/subastas`                         | Creación de subasta                                                 |
+| `GET /api/v1/subastas/{id}`                     | Detalle + estado + puja actual                                      |
+| `GET /api/v1/subastas/{id}/pujas`               | Historial de pujas de una subasta                                   |
+| `POST /api/v1/subastas/{id}/pujas`              | Nueva oferta (valida saldo, incremento, anti-sniping)               |
+| `GET /api/v1/billeteras/{usuarioId}`            | Desglose de saldos                                                  |
+| `POST /api/v1/billeteras/{usuarioId}/depositos` | Acreditación simulada de fondos                                     |
+| `GET /api/v1/auditoria?entidad=&entidadId=`     | Trazabilidad de eventos de auditoría                                |
 
 Nombres de recursos en plural, sin verbos en la URL (según lineamiento de la
 consigna) — se ajustan levemente los ejemplos de la consigna
@@ -236,17 +251,18 @@ consistencia en español y con la jerarquía recurso/subrecurso.
   endpoints por rol (ej. que solo el vendedor edite su subasta), va a hacer
   falta sumar Spring Security completo (filtro + JWT o sesión) sobre esta base.
 
-
 ## 6. Tiempo real (dominio)
 
 La subasta es un proceso colaborativo en vivo. No alcanza con REST porque el estado cambia por acciones de terceros.
 
 **Eventos de dominio que se difunden (`TipoEvento`):**
+
 - `ESTADO_ACTUAL`: snapshot al entrar a una subasta (precio, líder, fecha_fin, estado)
 - `NUEVA_PUJA`: una puja válida fue aceptada
 - `FINALIZADA` / `DESIERTA`: cierre por Worker
 
 **Canales:**
+
 - Petición: cliente pide estado inicial por `/app/subastas/{id}`
 - Difusión: servidor publica eventos por `/topic/subastas/{id}` a todos los suscriptores
 
@@ -258,3 +274,32 @@ solo puede dispararse al procesar una puja, viaja embebida en el mismo
 `PujaResponse.extendidoPorAntiSniping` le dice al frontend si corresponde
 mostrar el aviso). No hace falta un `TipoEvento.EXTENSION_TIEMPO` separado
 porque nunca ocurre de forma independiente de una puja.
+
+## Catálogo de subastas — reglas de filtrado y listado
+
+El listado de subastas (`GET /api/v1/subastas`) admite los siguientes filtros, todos opcionales y combinables entre sí (AND lógico):
+
+| Filtro                    | Tipo            | Descripción                                                                                                    |
+| ------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------- |
+| `estado`                  | `EstadoSubasta` | ACTIVA, PROGRAMADA, FINALIZADA o DESIERTA                                                                      |
+| `categoriaId`             | `Long`          | Filtra por categoría exacta                                                                                    |
+| `precioMin` / `precioMax` | `BigDecimal`    | Filtra por `precioBase` (no por oferta actual)                                                                 |
+| `sort`                    | `String`        | `menorTiempo` (default, ordena por `fechaFin` ascendente) o `mayorPuja` (ordena por oferta actual descendente) |
+
+**Nota de diseño:** el filtro de precio opera sobre `precioBase`, no sobre la oferta actual (última puja o precio base si no hay pujas). Si una subasta recibió pujas por encima del rango filtrado, igual puede aparecer en el listado — esto es una limitación conocida a resolver en una futura iteración.
+
+### Estado DESIERTA en el listado
+
+`DESIERTA` es un estado terminal, al igual que `FINALIZADA`: una subasta pasa a `DESIERTA` cuando el worker de liquidación (`SubastaLiquidacionWorker`) la encuentra vencida (`fechaFin < now()`) sin ninguna puja registrada. A diferencia de `FINALIZADA` (que implica una liquidación exitosa entre comprador y vendedor), `DESIERTA` no involucra ningún movimiento de billetera.
+
+En el catálogo, el usuario puede filtrar explícitamente por subastas desiertas para revisar publicaciones que no recibieron ofertas.
+
+### Manejo de fechas y timezone (regla operativa)
+
+Todas las fechas del dominio (`fechaInicio`, `fechaFin`, `fechaPuja`, etc.) se almacenan y comparan en **UTC**:
+
+- La JVM del backend corre con `-Duser.timezone=UTC` (fijado explícitamente, tanto en runtime como en los tests vía Surefire `argLine`).
+- La sesión de Postgres usa `UTC` como timezone (confirmado con `SHOW timezone`).
+- Al serializar a JSON, las fechas `LocalDateTime` se emiten con sufijo `Z` (vía un serializer custom en `JacksonConfig`) para dejar explícita la zona horaria y evitar que los clientes (frontend, u otros consumidores de la API) las interpreten erróneamente como hora local.
+
+**Regla para desarrollo futuro:** cualquier nuevo campo de fecha en una entidad o DTO hereda este comportamiento automáticamente (el serializer está registrado globalmente en el `ObjectMapper` de Spring). Si en algún momento se cambia el timezone de la JVM o de Postgres, este mecanismo deja de ser válido y debe revisarse.
