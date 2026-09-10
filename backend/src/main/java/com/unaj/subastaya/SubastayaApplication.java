@@ -10,7 +10,7 @@ import java.util.TimeZone;
 @EnableScheduling
 public class SubastayaApplication {
 
-	private static final String ZONA_HORARIA = "America/Argentina/Buenos_Aires";
+	private static final String ZONA_HORARIA = "UTC";
 
 	public static void main(String[] args) {
 		TimeZone.setDefault(TimeZone.getTimeZone(ZONA_HORARIA));
