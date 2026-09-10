@@ -1,44 +1,44 @@
-import { useState, useEffect } from 'react'
-import { obtenerSubastas } from '../services/subastasService'
-import SubastaCard from '../components/SubastaCard/SubastaCard'
-import FiltrosPanel from '../components/FiltrosPanel/FiltrosPanel'
-import OrdenSelector from '../components/OrdenSelector/OrdenSelector'
-import './CatalogoPage.css'
+import { useState, useEffect } from "react";
+import { obtenerSubastas } from "../services/subastasService";
+import SubastaCard from "../components/SubastaCard/SubastaCard";
+import FiltrosPanel from "../components/FiltrosPanel/FiltrosPanel";
+import OrdenSelector from "../components/OrdenSelector/OrdenSelector";
+import "./CatalogoPage.css";
 
 function CatalogoPage() {
-  const [subastas, setSubastas] = useState([])
+  const [subastas, setSubastas] = useState([]);
   const [filtros, setFiltros] = useState({
     estado: null,
     categoriaId: null,
-    precioMin: '',
-    precioMax: ''
-  })
-  const [sort, setSort] = useState('menorTiempo')
-  const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState(null)
+    precioMin: "",
+    precioMax: "",
+  });
+  const [sort, setSort] = useState("menorTiempo");
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchSubastas = async () => {
-      setCargando(true)
-      setError(null)
+      setCargando(true);
+      setError(null);
       try {
-        const data = await obtenerSubastas({ ...filtros, sort })
-        setSubastas(data)
+        const data = await obtenerSubastas({ ...filtros, sort });
+        setSubastas(data);
       } catch (err) {
-        setError(err.message)
-        setSubastas([])
+        setError(err.message);
+        setSubastas([]);
       } finally {
-        setCargando(false)
+        setCargando(false);
       }
-    }
+    };
 
-    fetchSubastas()
-  }, [filtros, sort])
+    fetchSubastas();
+  }, [filtros, sort]);
 
   return (
     <div className="catalogo-page">
       <header className="catalogo-page__header">
-        <h1 className="catalogo-page__titulo">Subastas</h1>
+        <h1 className="catalogo-page__titulo">SubastasYa</h1>
         <OrdenSelector valor={sort} onChange={setSort} />
       </header>
 
@@ -83,7 +83,7 @@ function CatalogoPage() {
         </main>
       </div>
     </div>
-  )
+  );
 }
 
-export default CatalogoPage
+export default CatalogoPage;
