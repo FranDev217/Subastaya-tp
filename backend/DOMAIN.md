@@ -48,7 +48,9 @@ disparó un usuario y no el Worker).
 
 Transiciones de estado válidas:
 `PROGRAMADA → ACTIVA → (FINALIZADA | DESIERTA)`. `ACTIVA` puede reescribir su
-propio `fecha_fin` (anti-sniping) sin cambiar de estado.
+propio `fecha_fin` (anti-sniping) sin cambiar de estado. La transición
+`PROGRAMADA → ACTIVA` la ejecuta `SubastaActivacionWorker` cuando llega
+`fecha_inicio` (ver 2.5).
 
 ### Billetera
 
@@ -104,7 +106,7 @@ que modifica `Billetera`.
 | id           | Long (PK)               |                                                                                  |
 | entidad      | String                  | `SUBASTA`, `BILLETERA`, `SISTEMA`                                                |
 | entidad_id   | Long                    | id del registro afectado                                                         |
-| accion       | String                  | ej. `EXTENSION_TIEMPO`, `CIERRE_WORKER`, `PUJA_RECHAZADA`, `ACREDITACION_MANUAL` |
+| accion       | String                  | ej. `SUBASTA_CREADA`, `APERTURA_WORKER`, `EXTENSION_TIEMPO`, `CIERRE_WORKER`, `PUJA_RECHAZADA`, `ACREDITACION_MANUAL` |
 | usuario_id   | FK → Usuario (nullable) | null si la acción la ejecutó el Worker                                           |
 | detalle_json | String/JSON             | payload con los cambios                                                          |
 | fecha        | datetime                |                                                                                  |
@@ -122,6 +124,10 @@ concurrencia o validación de negocio, y acreditaciones manuales de saldo.
   usa `REQUIRES_NEW` para sobrevivir el rollback. La puja rechazada **no** se
   persiste en `puja`.
 - `ACREDITACION_MANUAL` — `BilleteraService.depositar`, entidad `BILLETERA`.
+- `SUBASTA_CREADA` — alta de subasta por el vendedor (`SubastaService.crearSubasta`),
+  con `usuario_id` del vendedor.
+- `APERTURA_WORKER` — `SubastaActivacionWorker` abre una `PROGRAMADA` cuyo
+  `fecha_inicio` llegó (`usuario_id = null`).
 - Consulta: `GET /api/v1/auditoria?entidad=&entidadId=` (sin PUT/DELETE).
 
 ## 2. Reglas de negocio
@@ -191,6 +197,26 @@ sesión/token: es una validación de credenciales, no una capa de autorización.
   válido); `V4__seed_passwords_bcrypt.sql` los reemplaza por un hash real de
   `Password123!` para los 4 usuarios semilla.
 
+### 2.5 Creación de subasta (vendedor)
+
+`POST /api/v1/subastas` da de alta una subasta a nombre de un usuario
+autenticado como vendedor. Como aún no hay sesión/token, el `vendedorId` viaja
+en el body (mismo patrón que `PujaRequest.compradorId`).
+
+Reglas:
+
+1. Validación de campos: `titulo`, `descripcion`, `categoriaId`, `precioBase`,
+   `incrementoMinimo`, `fechaInicio`, `fechaFin` y `vendedorId` son
+   obligatorios; precios e incremento deben ser `> 0`; `fechaFin` debe ser
+   futura.
+2. Validación cruzada: `fechaFin > fechaInicio` (`@AssertTrue`, error de campo
+   `fechasCoherentes`).
+3. `categoriaId` y `vendedorId` deben existir → si no, `404`.
+4. Estado inicial: `PROGRAMADA` si `fechaInicio > now()`, `ACTIVA` si
+   `fechaInicio <= now()` (permite publicar subastas que arrancan de inmediato).
+   La `PROGRAMADA` pasa a `ACTIVA` automáticamente vía `SubastaActivacionWorker`.
+5. Respuesta `201 Created` + `Location`. El alta se audita como `SUBASTA_CREADA`.
+
 ## 3. Seed data obligatorio
 
 **Usuarios / Billeteras:**
@@ -226,7 +252,7 @@ y el `saldo_retenido` de $45.000 de `comprador1`.
 | ----------------------------------------------- | ------------------------------------------------------------------- |
 | `POST /api/v1/auth/login`                       | Login: valida email + contraseña, devuelve la identidad del usuario |
 | `GET /api/v1/subastas`                          | Listado con paginación y filtros (estado, categoría, precio, orden) |
-| `POST /api/v1/subastas`                         | Creación de subasta                                                 |
+| `POST /api/v1/subastas`                         | Creación de subasta por el vendedor (`201` + `Location`)            |
 | `GET /api/v1/subastas/{id}`                     | Detalle + estado + puja actual                                      |
 | `GET /api/v1/subastas/{id}/pujas`               | Historial de pujas de una subasta                                   |
 | `POST /api/v1/subastas/{id}/pujas`              | Nueva oferta (valida saldo, incremento, anti-sniping)               |
@@ -250,6 +276,9 @@ consistencia en español y con la jerarquía recurso/subrecurso.
 - El login (2.4) no genera sesión/token: si más adelante hace falta proteger
   endpoints por rol (ej. que solo el vendedor edite su subasta), va a hacer
   falta sumar Spring Security completo (filtro + JWT o sesión) sobre esta base.
+  Mientras tanto, la creación de subasta (2.5) confía en el `vendedorId` que
+  envía el cliente, por lo que un atacante podría publicar a nombre de otro
+  usuario: es una limitación conocida a resolver con autenticación real.
 
 ## 6. Tiempo real (dominio)
 
@@ -259,6 +288,7 @@ La subasta es un proceso colaborativo en vivo. No alcanza con REST porque el est
 
 - `ESTADO_ACTUAL`: snapshot al entrar a una subasta (precio, líder, fecha_fin, estado)
 - `NUEVA_PUJA`: una puja válida fue aceptada
+- `ESTADO_CAMBIADO`: apertura de una subasta `PROGRAMADA` por `SubastaActivacionWorker`
 - `FINALIZADA` / `DESIERTA`: cierre por Worker
 
 **Canales:**
