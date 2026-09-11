@@ -1,11 +1,24 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { obtenerSubastas } from "../services/subastasService";
 import SubastaCard from "../components/SubastaCard/SubastaCard";
 import FiltrosPanel from "../components/FiltrosPanel/FiltrosPanel";
 import OrdenSelector from "../components/OrdenSelector/OrdenSelector";
 import "./CatalogoPage.css";
 
+const USUARIO_STORAGE_KEY = "subastaya_usuario";
+
+function usuarioGuardado() {
+  try {
+    const guardado = localStorage.getItem(USUARIO_STORAGE_KEY);
+    return guardado ? JSON.parse(guardado) : null;
+  } catch {
+    return null;
+  }
+}
+
 function CatalogoPage() {
+  const usuario = usuarioGuardado();
   const [subastas, setSubastas] = useState([]);
   const [filtros, setFiltros] = useState({
     estado: null,
@@ -38,7 +51,17 @@ function CatalogoPage() {
   return (
     <div className="catalogo-page">
       <header className="catalogo-page__header">
-        <h1 className="catalogo-page__titulo">SubastasYa</h1>
+        <div className="catalogo-page__barra">
+          <h1 className="catalogo-page__titulo">SubastasYa</h1>
+          <nav className="catalogo-page__nav">
+            <Link to="/publicar" className="catalogo-page__nav-link catalogo-page__nav-link--primary">
+              Publicar subasta
+            </Link>
+            <Link to="/login" className="catalogo-page__nav-link">
+              {usuario ? `Hola, ${usuario.nombre}` : 'Iniciar sesión'}
+            </Link>
+          </nav>
+        </div>
         <OrdenSelector valor={sort} onChange={setSort} />
       </header>
 

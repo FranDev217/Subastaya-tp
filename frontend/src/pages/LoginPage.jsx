@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { login } from '../api/authApi'
 import './LoginPage.css'
 
@@ -14,6 +15,8 @@ function usuarioGuardado() {
 }
 
 function LoginPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [cargando, setCargando] = useState(false)
@@ -28,6 +31,7 @@ function LoginPage() {
       const datosUsuario = await login(email, password)
       localStorage.setItem(USUARIO_STORAGE_KEY, JSON.stringify(datosUsuario))
       setUsuario(datosUsuario)
+      navigate(location.state?.from ?? '/', { replace: true })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -53,6 +57,14 @@ function LoginPage() {
               Hola, <strong>{usuario.nombre}</strong>
             </p>
             <p className="login-email">{usuario.email}</p>
+          </div>
+          <div className="login-acciones">
+            <Link className="login-link" to="/">
+              Ir al catálogo
+            </Link>
+            <Link className="login-link" to="/publicar">
+              Publicar subasta
+            </Link>
           </div>
           <button type="button" className="login-button login-button-secondary" onClick={handleLogout}>
             Cerrar sesión
