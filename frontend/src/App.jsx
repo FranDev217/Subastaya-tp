@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import CatalogoPage from './pages/CatalogoPage'
 import LoginPage from './pages/LoginPage'
+import PublicarSubastaPage from './pages/PublicarSubastaPage'
 
 function App() {
   return (
@@ -8,6 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<CatalogoPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/publicar" element={<PublicarSubastaPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
