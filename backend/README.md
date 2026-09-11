@@ -289,6 +289,54 @@ Funcionalidades:
 - Estados de carga, error y "sin resultados".
 - Grid responsive: 1 columna en mobile → 4 columnas en desktop grande.
 
+## Módulo 2: Creación y Publicación de Subastas (Vendedor)
+
+### Backend
+
+- `POST /api/v1/subastas` — crea una subasta. Responde `201 Created` con header
+  `Location: /api/v1/subastas/{id}` y el cuerpo `SubastaCreadaResponse`.
+- `dto/SubastaRequest` — Bean Validation: `@NotBlank`/`@Size(max=200)` en
+  `titulo`, `@NotBlank` en `descripcion`, `@Size(max=500)` en `urlImagen`
+  (opcional), `@NotNull` en `categoriaId`/`vendedorId`/`fechaInicio`/`fechaFin`,
+  `@Positive` en `precioBase`/`incrementoMinimo` y `@Future` en `fechaFin`. La
+  coherencia `fechaFin > fechaInicio` se valida con
+  `@AssertTrue isFechasCoherentes()` (field error `fechasCoherentes`).
+- `SubastaService.crearSubasta` — resuelve vendedor y categoría (`404` vía
+  `RecursoNoEncontradoException`), decide el estado inicial (`PROGRAMADA` si
+  `fechaInicio` es futura, `ACTIVA` si ya empezó), persiste y audita con la
+  acción `SUBASTA_CREADA`.
+- Los errores de validación pasan por el `GlobalExceptionHandler` existente
+  (`400` con mapa de campos, `404`, `422`, `409`).
+
+### Activación automática (`PROGRAMADA → ACTIVA`)
+
+`SubastaActivacionWorker` (`@Scheduled` cada 60s, con
+`initialDelayString = ${subastaya.worker.initial-delay-ms}`) abre las subastas
+`PROGRAMADA` cuyo `fechaInicio` ya llegó:
+
+- Re-valida estado y fecha dentro de la transacción
+  (`SubastaService.activarSubasta`) para no pisar cambios concurrentes.
+- Registra `AuditoriaLog` con acción `APERTURA_WORKER` (`usuario_id = null`).
+- Difunde `TipoEvento.ESTADO_CAMBIADO` por WebSocket (`/topic/subastas/{id}`).
+- Aísla fallos por subasta, igual que el worker de liquidación.
+
+### Frontend
+
+- Ruta `/publicar` (`PublicarSubastaPage`), protegida: sin usuario en
+  `localStorage` redirige a `/login` y, tras iniciar sesión, vuelve al
+  formulario (`location.state.from`).
+- Formulario con datos del producto, configuración económica y ventana
+  temporal; las categorías se cargan desde `GET /api/v1/subastas/categorias`.
+- Validaciones en pantalla antes de enviar: campos requeridos,
+  `precioBase`/`incrementoMinimo > 0`, `fechaFin > fechaInicio`, `fechaFin`
+  futura y URL válida. Mensajes por campo + error general; los `errores` del
+  backend se mapean a cada campo.
+- Estados de carga (`Publicando…`, fieldsets deshabilitados) y feedback de
+  éxito con el estado resultante (`PROGRAMADA`/`ACTIVA`).
+- Conversión del `datetime-local` (hora local) a UTC sin `Z` antes del `POST`,
+  consistente con `JacksonConfig`.
+- Navegación con `react-router-dom`: `/` (catálogo), `/login` y `/publicar`.
+
 ## Convenciones de trabajo
 
 - Ramas de trabajo: `feature/nombre-de-la-funcionalidad`
@@ -305,4 +353,6 @@ Funcionalidades:
 - [x] Background Worker de liquidación
 - [x] Auditoría de eventos (cierre Worker, anti-sniping, pujas rechazadas, acreditaciones manuales)
 - [x] Autenticación básica (login, sin sesión/token todavía)
+- [x] Módulo 1: Catálogo y exploración de subastas
+- [x] Módulo 2: Creación y publicación de subastas (vendedor)
 - [ ] Documentación Swagger completa.
