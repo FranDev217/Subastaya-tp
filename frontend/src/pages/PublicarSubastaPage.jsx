@@ -75,7 +75,7 @@ function PublicarSubastaPage() {
   }, [])
 
   if (!usuario) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace state={{ from: '/publicar' }} />
   }
 
   function handleChange(event) {
