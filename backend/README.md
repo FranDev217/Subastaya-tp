@@ -30,18 +30,16 @@ Trabajo Práctico de la materia Proyecto de Software - Ing. en Informática.
   plurales y jerarquías de recursos (ej. `GET /api/v1/subastas/{id}/pujas`),
   sin verbos en la URL.
 - **Tiempo real - WebSocket + STOMP:** para evitar polling. Endpoint `ws://localhost:8080/ws`. Handshake HTTP con `101 Switching Protocols`. Sobre el tubo TCP se usa STOMP:
-    - Cliente pide estado inicial por `/app/subastas/{id}` -> recibe `ESTADO_ACTUAL`.
-    - Cliente se suscribe a `/topic/subastas/{id}` -> recibe broadcast de `NUEVA_PUJA`, `EXTENSION_TIEMPO`, `FINALIZADA`/`DESIERTA`.
-    - Flujo: `POST /api/v1/subastas/{id}/pujas` -> `SubastaNotificador` -> `SimpMessagingTemplate.convertAndSend("/topic/...")`.
-    - Tests en `SubastaWebSocketTest.java` con `WebSocketStompClient` real y `BlockingQueue`.
+  - Cliente pide estado inicial por `/app/subastas/{id}` -> recibe `ESTADO_ACTUAL`.
+  - Cliente se suscribe a `/topic/subastas/{id}` -> recibe broadcast de `NUEVA_PUJA`, `EXTENSION_TIEMPO`, `FINALIZADA`/`DESIERTA`.
+  - Flujo: `POST /api/v1/subastas/{id}/pujas` -> `SubastaNotificador` -> `SimpMessagingTemplate.convertAndSend("/topic/...")`.
+  - Tests en `SubastaWebSocketTest.java` con `WebSocketStompClient` real y `BlockingQueue`.
 - **Background Worker:** un proceso `@Scheduled` verifica cada 60s las
   subastas vencidas, las liquida o marca `DESIERTA`, y registra el cierre
   en `auditoria_log` (ver sección dedicada más abajo).
 - **Auditoría:** los cambios críticos (cambios de estado, extensiones por
   anti-sniping, pujas rechazadas, acreditaciones manuales) quedan
   registrados de forma inmutable en `auditoria_log` (ver sección dedicada).
-
-
 
 ## Requisitos previos
 
@@ -59,27 +57,32 @@ paso 5) queda disponible sin instalación aparte.
 ## Cómo levantar el proyecto
 
 1. **Clonar el repositorio**
+
 ```bash
    git clone https://github.com/TU_USUARIO/subastaya-tp.git
    cd subastaya-tp/backend
 ```
 
 2. **Levantar la base de datos con Docker**
+
 ```bash
    docker compose up -d
 ```
+
 Verificar que el contenedor esté sano:
+
 ```bash
    docker compose ps
 ```
+
 Debería mostrar `subastaya-db` con estado `healthy`.
 
 3. **Configurar el Run en el IDE**
 
    En IntelliJ: `Run → Edit Configurations → Add new → Application`
-    - Main class: `com.unaj.subastaya.SubastayaApplication`
-    - Module: `backend`
-    - JDK: 17 (o superior instalado)
+   - Main class: `com.unaj.subastaya.SubastayaApplication`
+   - Module: `backend`
+   - JDK: 17 (o superior instalado)
 
    **Importante:** si tu sistema operativo usa una zona horaria que
    PostgreSQL no reconoce (error típico:
@@ -98,15 +101,17 @@ estás en Argentina).
    `http://localhost:8080/swagger-ui.html`
 
 5. **Levantar el frontend** (opcional, para probar el login end-to-end)
+
 ```bash
    corepack enable   # una sola vez por máquina, si no tenés pnpm instalado
    cd ../frontend
    pnpm install
    pnpm dev
 ```
-   Queda disponible en `http://localhost:5173`. En desarrollo, Vite proxea
-   `/api/*` hacia `http://localhost:8080` (ver `frontend/vite.config.js`),
-   así no hace falta configurar CORS.
+
+Queda disponible en `http://localhost:5173`. En desarrollo, Vite proxea
+`/api/*` hacia `http://localhost:8080` (ver `frontend/vite.config.js`),
+así no hace falta configurar CORS.
 
 ## Estructura del proyecto
 
@@ -119,13 +124,13 @@ subastaya-tp/
 │ │ ├── model/ # Entidades JPA
 │ │ └── dto/ # Objetos de transferencia (request/response)
 │ ├── src/main/resources/
-│ │ ├── db/migration/ # Migraciones Flyway (V1__init.sql, etc.)
+│ │ ├── db/migration/ # Migraciones Flyway (V1\_\_init.sql, etc.)
 │ │ └── application.properties
 │ └── docker-compose.yaml # Definición de PostgreSQL local
 └── frontend/ # Vite + React
-  └── src/
-    ├── pages/ # Pantallas (ej. LoginPage)
-    └── api/ # Clientes fetch hacia el backend
+└── src/
+├── pages/ # Pantallas (ej. LoginPage)
+└── api/ # Clientes fetch hacia el backend
 
 ![img.png](img.png)
 _(Se irá actualizando a medida que se agreguen módulos.)_
@@ -202,12 +207,12 @@ Tabla append-only `auditoria_log`. Acciones de usuario llevan `usuario_id`;
 las del Worker/sistema van con `usuario_id = null`. El rechazo de una puja
 usa `REQUIRES_NEW` para que el registro sobreviva el rollback.
 
-| Acción | Entidad | Cuándo |
-|---|---|---|
-| `CIERRE_WORKER` | `SUBASTA` | Worker pasa a `FINALIZADA` o `DESIERTA` |
-| `EXTENSION_TIEMPO` | `SUBASTA` | Anti-sniping extiende `fecha_fin` |
-| `PUJA_RECHAZADA` | `SUBASTA` | Validación de negocio o `409` de concurrencia |
-| `ACREDITACION_MANUAL` | `BILLETERA` | Depósito de saldo |
+| Acción                | Entidad     | Cuándo                                        |
+| --------------------- | ----------- | --------------------------------------------- |
+| `CIERRE_WORKER`       | `SUBASTA`   | Worker pasa a `FINALIZADA` o `DESIERTA`       |
+| `EXTENSION_TIEMPO`    | `SUBASTA`   | Anti-sniping extiende `fecha_fin`             |
+| `PUJA_RECHAZADA`      | `SUBASTA`   | Validación de negocio o `409` de concurrencia |
+| `ACREDITACION_MANUAL` | `BILLETERA` | Depósito de saldo                             |
 
 Endpoints:
 
@@ -248,6 +253,41 @@ Frontend: `frontend/src/pages/LoginPage.jsx` consume este endpoint vía
 `http://localhost:8080` (`frontend/vite.config.js`), así no hace falta
 configurar CORS. Para probarlo end-to-end: levantar el backend
 (`./mvnw spring-boot:run`), y en otra terminal `cd frontend && pnpm install && pnpm dev`.
+
+## Módulo 1: Catálogo y Exploración de Subastas
+
+### Backend
+
+Nuevos endpoints agregados a `SubastaController`:
+
+- `GET /api/v1/subastas` — Lista subastas con filtros combinables:
+  - `estado` (ACTIVA | PROGRAMADA | FINALIZADA | DESIERTA)
+  - `categoriaId`
+  - `precioMin` / `precioMax`
+  - `sort` (`menorTiempo` | `mayorPuja`)
+- `GET /api/v1/subastas/categorias` — Lista las categorías disponibles.
+
+Cambios de soporte:
+
+- `SubastaRepository.buscarConFiltros(...)`: query JPQL con filtros opcionales (parámetros `NULL`-safe).
+- `PujaRepository.countBySubastaId(...)`: cuenta de pujas por subasta.
+- `SubastaListadoResponse` / `CategoriaResponse`: nuevos DTOs de solo lectura para el listado.
+- `SubastaService.buscarSubastas(...)` / `obtenerCategorias(...)`: orquestan filtros, mapeo a DTO y ordenamiento.
+
+**Fix de timezone (importante):** el backend corre en UTC (JVM y Postgres), pero `LocalDateTime` no serializa la zona horaria en el JSON. Se agregó `config/JacksonConfig.java`, que registra un serializer custom para `LocalDateTime` que agrega el sufijo `Z` al serializar, dejando explícito que la fecha es UTC. Esto evita que el frontend interprete mal las fechas al parsearlas. La JVM debe seguir corriendo en UTC (fijado también en los tests vía `argLine` de Surefire) para que esto sea correcto.
+
+### Frontend
+
+Funcionalidades:
+
+- Filtro por estado, incluyendo **Desiertas** (subastas vencidas sin pujas).
+- Filtro por categoría (cargada dinámicamente desde la API).
+- Filtro por rango de precio.
+- Ordenamiento por menor tiempo restante o mayor puja actual.
+- Countdown en tiempo real por card, sincronizado correctamente con la hora UTC del backend.
+- Estados visuales diferenciados por badge: En curso (verde), Próxima (amarillo), Finalizada (celeste/gris), Desierta (gris).
+- Estados de carga, error y "sin resultados".
+- Grid responsive: 1 columna en mobile → 4 columnas en desktop grande.
 
 ## Convenciones de trabajo
 
