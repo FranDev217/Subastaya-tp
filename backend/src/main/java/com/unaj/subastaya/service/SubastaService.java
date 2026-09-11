@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -87,6 +88,39 @@ public class SubastaService {
                 subasta.getEstado(),
                 subasta.getVendedor().getId()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<Subasta> obtenerSubastasProgramadasParaActivar() {
+        return subastaRepository.findByEstadoAndFechaInicioLessThanEqual(
+                EstadoSubasta.PROGRAMADA, LocalDateTime.now());
+    }
+
+    /**
+     * Abre una subasta programada cuyo inicio ya llegó. Se revalida el estado y la
+     * fecha dentro de la transacción porque entre la consulta del Worker y este
+     * momento la subasta pudo haber cambiado. Si no correspondía abrirla, no se
+     * hace nada y se reprocesa en la siguiente corrida.
+     *
+     * @return el estado al que quedó la subasta, o vacío si no correspondía abrirla.
+     */
+    @Transactional
+    public Optional<EstadoSubasta> activarSubasta(Long subastaId) {
+        Subasta subasta = subastaRepository.findById(subastaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Subasta " + subastaId + " no encontrada"));
+
+        if (subasta.getEstado() != EstadoSubasta.PROGRAMADA
+                || subasta.getFechaInicio().isAfter(LocalDateTime.now())) {
+            return Optional.empty();
+        }
+
+        subasta.setEstado(EstadoSubasta.ACTIVA);
+
+        auditoriaLogService.registrar(TipoEntidadAuditoria.SUBASTA, subasta.getId(),
+                AccionAuditoria.APERTURA_WORKER, null,
+                "Abierta por el Worker: inicio " + subasta.getFechaInicio());
+
+        return Optional.of(EstadoSubasta.ACTIVA);
     }
 
     @Transactional(readOnly = true)
