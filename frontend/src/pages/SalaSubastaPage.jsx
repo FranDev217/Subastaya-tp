@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useSalaSubasta } from "../hooks/useSalaSubasta";
 import { useCountdown } from "../hooks/useCountdown";
+import HistorialPujas from "../components/HistorialPujas/HistorialPujas";
 import "./SalaSubastaPage.css";
 
 const USUARIO_STORAGE_KEY = "subastaya_usuario";
@@ -85,6 +86,7 @@ function SalaSubastaPage() {
 
   const {
     detalle,
+    pujas,
     ofertaActual,
     incrementoMinimo,
     fechaFin,
@@ -133,24 +135,28 @@ function SalaSubastaPage() {
       </header>
 
       <div className="sala__layout">
-        <main className="sala__principal">
-          <div className="sala__imagen-container">
-            <img
-              src={detalle.urlImagen || "/placeholder.jpg"}
-              alt={detalle.titulo}
-              className="sala__imagen"
-            />
-            <span className={`sala__badge sala__badge--${info.clase}`}>
-              {info.texto}
-            </span>
-          </div>
+        <div className="sala__columna">
+          <main className="sala__principal">
+            <div className="sala__imagen-container">
+              <img
+                src={detalle.urlImagen || "/placeholder.jpg"}
+                alt={detalle.titulo}
+                className="sala__imagen"
+              />
+              <span className={`sala__badge sala__badge--${info.clase}`}>
+                {info.texto}
+              </span>
+            </div>
 
-          <div className="sala__info">
-            <span className="sala__categoria">{detalle.categoriaNombre}</span>
-            <h1 className="sala__titulo">{detalle.titulo}</h1>
-            <p className="sala__descripcion">{detalle.descripcion}</p>
-          </div>
-        </main>
+            <div className="sala__info">
+              <span className="sala__categoria">{detalle.categoriaNombre}</span>
+              <h1 className="sala__titulo">{detalle.titulo}</h1>
+              <p className="sala__descripcion">{detalle.descripcion}</p>
+            </div>
+          </main>
+
+          <HistorialPujas pujas={pujas} />
+        </div>
 
         <aside className="sala__panel">
           <TemporizadorVivo fechaFin={fechaFin} estado={estado} />

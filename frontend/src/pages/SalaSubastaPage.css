@@ -107,6 +107,13 @@
   align-items: start;
 }
 
+.sala__columna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+  min-width: 0;
+}
+
 .sala__principal,
 .sala__panel {
   background: var(--bg-card);
