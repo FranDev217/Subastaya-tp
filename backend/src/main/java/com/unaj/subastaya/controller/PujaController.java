@@ -1,5 +1,6 @@
 package com.unaj.subastaya.controller;
 
+import com.unaj.subastaya.dto.PujaHistorialResponse;
 import com.unaj.subastaya.dto.PujaRequest;
 import com.unaj.subastaya.dto.PujaResponse;
 import com.unaj.subastaya.dto.SubastaEvento;
@@ -10,11 +11,14 @@ import com.unaj.subastaya.service.SubastaNotificador;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/subastas")
@@ -40,5 +44,10 @@ public class PujaController {
         subastaNotificador.notificar(subastaId, evento);
 
         return ResponseEntity.ok(puja);
+    }
+
+    @GetMapping("/{id}/pujas")
+    public ResponseEntity<List<PujaHistorialResponse>> listarPujas(@PathVariable("id") Long subastaId) {
+        return ResponseEntity.ok(pujaService.listarPujas(subastaId));
     }
 }
