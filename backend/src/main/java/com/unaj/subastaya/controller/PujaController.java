@@ -38,6 +38,7 @@ public class PujaController {
                 puja.subastaId(),
                 EstadoSubasta.ACTIVA,
                 puja.monto(),
+                puja.incrementoMinimo(),
                 puja.fechaFinSubasta(),
                 puja
         );
