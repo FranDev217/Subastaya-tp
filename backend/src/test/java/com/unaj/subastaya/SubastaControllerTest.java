@@ -153,6 +153,44 @@ class SubastaControllerTest {
         assertThat(post(body).statusCode()).isEqualTo(404);
     }
 
+    @Test
+    void obtieneDetalleConOfertaActualYLider() throws Exception {
+        HttpResponse<String> response = get("/api/v1/subastas/1");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        JsonNode json = objectMapper.readTree(response.body());
+        assertThat(json.get("precioBase").asDouble()).isEqualTo(40000);
+        assertThat(json.get("incrementoMinimo").asDouble()).isEqualTo(1000);
+        assertThat(json.get("ofertaActual").asDouble()).isEqualTo(45000);
+        assertThat(json.get("cantidadPujas").asInt()).isEqualTo(2);
+        assertThat(json.get("liderId").asLong()).isEqualTo(2);
+        assertThat(json.get("estado").asText()).isEqualTo("ACTIVA");
+    }
+
+    @Test
+    void detalleDeSubastaInexistenteDevuelve404() throws Exception {
+        assertThat(get("/api/v1/subastas/999999").statusCode()).isEqualTo(404);
+    }
+
+    @Test
+    void listarPujasDevuelveHistorialConAliasAnonimizado() throws Exception {
+        HttpResponse<String> response = get("/api/v1/subastas/1/pujas");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        JsonNode json = objectMapper.readTree(response.body());
+        assertThat(json.isArray()).isTrue();
+        assertThat(json.size()).isEqualTo(2);
+        assertThat(json.get(0).get("monto").asDouble()).isEqualTo(45000);
+        assertThat(json.get(0).get("alias").asText()).isEqualTo("Pujador #2");
+        assertThat(json.get(1).get("monto").asDouble()).isEqualTo(41000);
+        assertThat(json.get(1).get("alias").asText()).isEqualTo("Pujador #3");
+    }
+
+    @Test
+    void listarPujasDeSubastaInexistenteDevuelve404() throws Exception {
+        assertThat(get("/api/v1/subastas/999999/pujas").statusCode()).isEqualTo(404);
+    }
+
     private Map<String, Object> subastaValida(LocalDateTime inicio, LocalDateTime fin) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("titulo", "Producto de prueba");
@@ -176,6 +214,14 @@ class SubastaControllerTest {
                 .uri(URI.create("http://localhost:" + port + "/api/v1/subastas"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+                .build();
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> get(String ruta) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + ruta))
+                .GET()
                 .build();
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
