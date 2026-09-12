@@ -3,6 +3,7 @@ package com.unaj.subastaya.service;
 import com.unaj.subastaya.dto.CategoriaResponse;
 import com.unaj.subastaya.dto.PujaResponse;
 import com.unaj.subastaya.dto.SubastaCreadaResponse;
+import com.unaj.subastaya.dto.SubastaDetalleResponse;
 import com.unaj.subastaya.dto.SubastaEvento;
 import com.unaj.subastaya.dto.SubastaListadoResponse;
 import com.unaj.subastaya.dto.SubastaRequest;
@@ -121,6 +122,34 @@ public class SubastaService {
                 "Abierta por el Worker: inicio " + subasta.getFechaInicio());
 
         return Optional.of(EstadoSubasta.ACTIVA);
+    }
+
+    @Transactional(readOnly = true)
+    public SubastaDetalleResponse obtenerDetalle(Long subastaId) {
+        Subasta subasta = subastaRepository.findById(subastaId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Subasta " + subastaId + " no encontrada"));
+
+        Puja lider = pujaRepository.findTopBySubastaIdOrderByMontoDesc(subastaId).orElse(null);
+        BigDecimal ofertaActual = lider != null ? lider.getMonto() : subasta.getPrecioBase();
+        long cantidadPujas = pujaRepository.countBySubastaId(subastaId);
+
+        return new SubastaDetalleResponse(
+                subasta.getId(),
+                subasta.getTitulo(),
+                subasta.getDescripcion(),
+                subasta.getUrlImagen(),
+                subasta.getCategoria().getId(),
+                subasta.getCategoria().getNombre(),
+                subasta.getPrecioBase(),
+                subasta.getIncrementoMinimo(),
+                ofertaActual,
+                (int) cantidadPujas,
+                subasta.getFechaInicio(),
+                subasta.getFechaFin(),
+                subasta.getEstado(),
+                subasta.getVendedor().getId(),
+                lider != null ? lider.getComprador().getId() : null
+        );
     }
 
     @Transactional(readOnly = true)
