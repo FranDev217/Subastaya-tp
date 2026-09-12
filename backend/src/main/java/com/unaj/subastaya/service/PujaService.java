@@ -1,5 +1,6 @@
 package com.unaj.subastaya.service;
 
+import com.unaj.subastaya.dto.PujaHistorialResponse;
 import com.unaj.subastaya.dto.PujaRequest;
 import com.unaj.subastaya.dto.PujaResponse;
 import com.unaj.subastaya.exception.MontoInvalidoException;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -97,6 +99,21 @@ public class PujaService {
                     request.compradorId(), "Conflicto de concurrencia al registrar la puja");
             throw ex;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<PujaHistorialResponse> listarPujas(Long subastaId) {
+        if (!subastaRepository.existsById(subastaId)) {
+            throw new RecursoNoEncontradoException("Subasta " + subastaId + " no encontrada");
+        }
+
+        return pujaRepository.findBySubastaIdOrderByFechaPujaDesc(subastaId).stream()
+                .map(puja -> new PujaHistorialResponse(
+                        puja.getId(),
+                        "Pujador #" + puja.getComprador().getId(),
+                        puja.getMonto(),
+                        puja.getFechaPuja()))
+                .toList();
     }
 
     private boolean aplicarAntiSnipingSiCorresponde(Subasta subasta) {
