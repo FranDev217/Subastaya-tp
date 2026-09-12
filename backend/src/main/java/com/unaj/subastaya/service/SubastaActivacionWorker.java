@@ -46,6 +46,7 @@ public class SubastaActivacionWorker {
                 estadoActual.subastaId(),
                 EstadoSubasta.ACTIVA,
                 estadoActual.montoActual(),
+                estadoActual.incrementoMinimo(),
                 estadoActual.fechaFin(),
                 estadoActual.ultimaPuja()
         ));

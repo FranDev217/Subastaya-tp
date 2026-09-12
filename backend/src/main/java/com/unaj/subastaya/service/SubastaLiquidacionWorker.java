@@ -54,6 +54,7 @@ public class SubastaLiquidacionWorker {
                 estadoFinal.subastaId(),
                 estadoFinal.estado(),
                 estadoFinal.montoActual(),
+                estadoFinal.incrementoMinimo(),
                 estadoFinal.fechaFin(),
                 estadoFinal.ultimaPuja()
         ));

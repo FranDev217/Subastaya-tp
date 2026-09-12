@@ -168,6 +168,7 @@ public class SubastaService {
                 subasta.getId(),
                 subasta.getEstado(),
                 montoActual,
+                subasta.getIncrementoMinimo(),
                 subasta.getFechaFin(),
                 ultimaPuja
         );
@@ -225,10 +226,11 @@ public class SubastaService {
                 puja.getId(),
                 subasta.getId(),
                 puja.getComprador().getId(),
-                puja.getComprador().getNombre(),
+                PujaResponse.aliasDe(puja.getComprador().getId()),
                 puja.getMonto(),
                 puja.getFechaPuja(),
                 subasta.getFechaFin(),
+                subasta.getIncrementoMinimo(),
                 false
         );
     }
