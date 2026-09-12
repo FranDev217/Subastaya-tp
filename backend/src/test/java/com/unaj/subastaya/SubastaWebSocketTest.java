@@ -49,6 +49,7 @@ class SubastaWebSocketTest {
         assertThat(evento).isNotNull();
         assertThat(evento.tipo()).isEqualTo(TipoEvento.ESTADO_ACTUAL);
         assertThat(evento.subastaId()).isEqualTo(SUBASTA_ID);
+        assertThat(evento.incrementoMinimo()).isEqualByComparingTo("1000");
         assertThat(evento.fechaFin()).isNotNull();
     }
 
@@ -63,6 +64,7 @@ class SubastaWebSocketTest {
                 SUBASTA_ID,
                 EstadoSubasta.ACTIVA,
                 new BigDecimal("47000"),
+                new BigDecimal("1000"),
                 LocalDateTime.now(),
                 null
         );
