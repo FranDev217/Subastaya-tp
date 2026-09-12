@@ -84,10 +84,11 @@ public class PujaService {
                     puja.getId(),
                     subasta.getId(),
                     comprador.getId(),
-                    comprador.getNombre(),
+                    PujaResponse.aliasDe(comprador.getId()),
                     puja.getMonto(),
                     puja.getFechaPuja(),
                     subasta.getFechaFin(),
+                    subasta.getIncrementoMinimo(),
                     extendida
             );
         } catch (SaldoInsuficienteException ex) {
@@ -110,7 +111,7 @@ public class PujaService {
         return pujaRepository.findBySubastaIdOrderByFechaPujaDesc(subastaId).stream()
                 .map(puja -> new PujaHistorialResponse(
                         puja.getId(),
-                        "Pujador #" + puja.getComprador().getId(),
+                        PujaResponse.aliasDe(puja.getComprador().getId()),
                         puja.getMonto(),
                         puja.getFechaPuja()))
                 .toList();
