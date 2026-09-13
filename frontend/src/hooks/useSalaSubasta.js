@@ -183,6 +183,23 @@ export function useSalaSubasta(subastaId, { usuarioId, onEvento } = {}) {
 
   const cargando = detalle === null && errorCarga === null;
 
+  function aplicarPujaRespuesta(respuesta) {
+    if (!respuesta) return;
+    const puja = normalizarPuja(respuesta);
+    setOfertaActual(respuesta.monto);
+    if (respuesta.incrementoMinimo != null) {
+      setIncrementoMinimo(respuesta.incrementoMinimo);
+    }
+    if (respuesta.fechaFinSubasta != null) {
+      setFechaFin(respuesta.fechaFinSubasta);
+    }
+    liderIdRef.current = respuesta.compradorId;
+    setLiderId(respuesta.compradorId);
+    setPujas((previas) =>
+      previas.some((p) => p.id === puja.id) ? previas : [puja, ...previas],
+    );
+  }
+
   return {
     detalle,
     pujas,
@@ -194,5 +211,6 @@ export function useSalaSubasta(subastaId, { usuarioId, onEvento } = {}) {
     cargando,
     errorCarga,
     conectado,
+    aplicarPujaRespuesta,
   };
 }
