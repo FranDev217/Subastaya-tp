@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { useSalaSubasta } from "../hooks/useSalaSubasta";
 import { useCountdown } from "../hooks/useCountdown";
 import HistorialPujas from "../components/HistorialPujas/HistorialPujas";
+import ConsolaPuja from "../components/ConsolaPuja/ConsolaPuja";
+import { registrarPuja } from "../services/salaService";
 import "./SalaSubastaPage.css";
 
 const USUARIO_STORAGE_KEY = "subastaya_usuario";
@@ -83,18 +85,41 @@ function TemporizadorVivo({ fechaFin, estado }) {
 function SalaSubastaPage() {
   const { id } = useParams();
   const [usuario] = useState(usuarioGuardado);
+  const [enviandoPuja, setEnviandoPuja] = useState(false);
+  const [errorPuja, setErrorPuja] = useState(null);
 
   const {
     detalle,
     pujas,
     ofertaActual,
     incrementoMinimo,
+    liderId,
     fechaFin,
     estado,
     cargando,
     errorCarga,
     conectado,
+    aplicarPujaRespuesta,
   } = useSalaSubasta(id, { usuarioId: usuario?.usuarioId });
+
+  async function manejarPujar(monto) {
+    if (!usuario) return false;
+    setErrorPuja(null);
+    setEnviandoPuja(true);
+    try {
+      const respuesta = await registrarPuja(id, {
+        compradorId: usuario.usuarioId,
+        monto,
+      });
+      aplicarPujaRespuesta(respuesta);
+      return true;
+    } catch (error) {
+      setErrorPuja(error.message);
+      return false;
+    } finally {
+      setEnviandoPuja(false);
+    }
+  }
 
   if (cargando) {
     return (
@@ -170,6 +195,17 @@ function SalaSubastaPage() {
               Incremento mínimo: {formatearMonto(incrementoMinimo)}
             </span>
           </div>
+
+          <ConsolaPuja
+            ofertaActual={ofertaActual}
+            incrementoMinimo={incrementoMinimo}
+            estado={estado}
+            liderId={liderId}
+            usuario={usuario}
+            enviando={enviandoPuja}
+            errorPuja={errorPuja}
+            onPujar={manejarPujar}
+          />
         </aside>
       </div>
     </div>
