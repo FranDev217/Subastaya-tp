@@ -3,17 +3,20 @@ import CatalogoPage from './pages/CatalogoPage'
 import LoginPage from './pages/LoginPage'
 import PublicarSubastaPage from './pages/PublicarSubastaPage'
 import SalaSubastaPage from './pages/SalaSubastaPage'
+import { ToastProvider } from './components/Toasts/ToastProvider'
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<CatalogoPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/publicar" element={<PublicarSubastaPage />} />
-        <Route path="/subasta/:id" element={<SalaSubastaPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ToastProvider>
+        <Routes>
+          <Route path="/" element={<CatalogoPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/publicar" element={<PublicarSubastaPage />} />
+          <Route path="/subasta/:id" element={<SalaSubastaPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ToastProvider>
     </BrowserRouter>
   )
 }
