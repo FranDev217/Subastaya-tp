@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useSalaSubasta } from "../hooks/useSalaSubasta";
 import { useCountdown } from "../hooks/useCountdown";
+import { useToasts } from "../context/toastsContext";
 import HistorialPujas from "../components/HistorialPujas/HistorialPujas";
 import ConsolaPuja from "../components/ConsolaPuja/ConsolaPuja";
 import { registrarPuja } from "../services/salaService";
@@ -35,6 +36,28 @@ function infoEstado(estado) {
     default:
       return { texto: estado ?? "", clase: "desconocida" };
   }
+}
+
+function toastDeErrorPuja(error) {
+  if (error.status === 422 && /saldo|insuficiente/i.test(error.message)) {
+    return {
+      tipo: "error",
+      mensaje: `Fondos insuficientes para esa oferta. ${error.message}`,
+    };
+  }
+  if (error.status === 422) {
+    return { tipo: "warning", mensaje: error.message };
+  }
+  if (error.status === 409) {
+    return {
+      tipo: "warning",
+      mensaje: "Otro postor se adelantó. Actualizá el monto e intentá de nuevo.",
+    };
+  }
+  if (error.status === 400) {
+    return { tipo: "warning", mensaje: error.message };
+  }
+  return { tipo: "error", mensaje: error.message };
 }
 
 function TemporizadorVivo({ fechaFin, estado }) {
@@ -86,7 +109,43 @@ function SalaSubastaPage() {
   const { id } = useParams();
   const [usuario] = useState(usuarioGuardado);
   const [enviandoPuja, setEnviandoPuja] = useState(false);
-  const [errorPuja, setErrorPuja] = useState(null);
+  const { mostrar } = useToasts();
+
+  function manejarEvento(evento) {
+    if (evento.tipo === "NUEVA_PUJA") {
+      const esMia =
+        Boolean(usuario) && evento.puja?.compradorId === usuario.usuarioId;
+      if (esMia) return;
+      if (evento.extendidoPorAntiSniping) {
+        mostrar({
+          tipo: "warning",
+          mensaje: "Se extendió el tiempo 2 minutos por anti-sniping.",
+          duracion: 6000,
+        });
+      }
+      if (evento.superado) {
+        mostrar({
+          tipo: "error",
+          mensaje: "Te superaron: otro postor lidera ahora.",
+        });
+      }
+      return;
+    }
+    if (evento.tipo === "ESTADO_CAMBIADO") {
+      mostrar({ tipo: "info", mensaje: "La subasta se abrió: ¡ya podés pujar!" });
+      return;
+    }
+    if (evento.tipo === "FINALIZADA") {
+      mostrar({ tipo: "info", mensaje: "La subasta finalizó." });
+      return;
+    }
+    if (evento.tipo === "DESIERTA") {
+      mostrar({
+        tipo: "info",
+        mensaje: "La subasta quedó desierta: no recibió pujas.",
+      });
+    }
+  }
 
   const {
     detalle,
@@ -100,11 +159,13 @@ function SalaSubastaPage() {
     errorCarga,
     conectado,
     aplicarPujaRespuesta,
-  } = useSalaSubasta(id, { usuarioId: usuario?.usuarioId });
+  } = useSalaSubasta(id, {
+    usuarioId: usuario?.usuarioId,
+    onEvento: manejarEvento,
+  });
 
   async function manejarPujar(monto) {
     if (!usuario) return false;
-    setErrorPuja(null);
     setEnviandoPuja(true);
     try {
       const respuesta = await registrarPuja(id, {
@@ -112,9 +173,20 @@ function SalaSubastaPage() {
         monto,
       });
       aplicarPujaRespuesta(respuesta);
+      mostrar({
+        tipo: "success",
+        mensaje: `Puja registrada por ${formatearMonto(respuesta.monto)}.`,
+      });
+      if (respuesta.extendidoPorAntiSniping) {
+        mostrar({
+          tipo: "warning",
+          mensaje: "Tu puja extendió el tiempo 2 minutos (anti-sniping).",
+          duracion: 6000,
+        });
+      }
       return true;
     } catch (error) {
-      setErrorPuja(error.message);
+      mostrar(toastDeErrorPuja(error));
       return false;
     } finally {
       setEnviandoPuja(false);
@@ -203,7 +275,6 @@ function SalaSubastaPage() {
             liderId={liderId}
             usuario={usuario}
             enviando={enviandoPuja}
-            errorPuja={errorPuja}
             onPujar={manejarPujar}
           />
         </aside>
