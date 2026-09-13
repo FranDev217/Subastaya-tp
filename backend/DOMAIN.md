@@ -291,6 +291,11 @@ La subasta es un proceso colaborativo en vivo. No alcanza con REST porque el est
 - `ESTADO_CAMBIADO`: apertura de una subasta `PROGRAMADA` por `SubastaActivacionWorker`
 - `FINALIZADA` / `DESIERTA`: cierre por Worker
 
+`SubastaEvento` transporta `tipo`, `subastaId`, `estado`, `montoActual`,
+`incrementoMinimo`, `fechaFin` y `ultimaPuja` (snapshot `PujaResponse`). El
+`incrementoMinimo` permite al cliente calcular la próxima puja sugerida
+(`montoActual + incrementoMinimo`) sin recargar por REST.
+
 **Canales:**
 
 - Petición: cliente pide estado inicial por `/app/subastas/{id}`
@@ -304,6 +309,12 @@ solo puede dispararse al procesar una puja, viaja embebida en el mismo
 `PujaResponse.extendidoPorAntiSniping` le dice al frontend si corresponde
 mostrar el aviso). No hace falta un `TipoEvento.EXTENSION_TIEMPO` separado
 porque nunca ocurre de forma independiente de una puja.
+
+**Anonimización:** en la difusión en vivo y en el historial (`PujaResponse` y
+`PujaHistorialResponse`) el postor se identifica con el seudónimo
+`Pujador #<usuarioId>` (`compradorAlias`), nunca con su nombre real. Se
+conserva `compradorId` porque el cliente lo necesita para resolver el estado
+"Liderando"/"Superado" respecto del usuario logueado.
 
 ## Catálogo de subastas — reglas de filtrado y listado
 

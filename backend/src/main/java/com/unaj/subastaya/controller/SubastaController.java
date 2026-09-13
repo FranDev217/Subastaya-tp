@@ -2,6 +2,7 @@ package com.unaj.subastaya.controller;
 
 import com.unaj.subastaya.dto.CategoriaResponse;
 import com.unaj.subastaya.dto.SubastaCreadaResponse;
+import com.unaj.subastaya.dto.SubastaDetalleResponse;
 import com.unaj.subastaya.dto.SubastaListadoResponse;
 import com.unaj.subastaya.dto.SubastaRequest;
 import com.unaj.subastaya.model.EstadoSubasta;
@@ -10,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,5 +55,10 @@ public class SubastaController {
     @GetMapping("/categorias")
     public ResponseEntity<List<CategoriaResponse>> listarCategorias() {
         return ResponseEntity.ok(subastaService.obtenerCategorias());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SubastaDetalleResponse> obtenerDetalle(@PathVariable Long id) {
+        return ResponseEntity.ok(subastaService.obtenerDetalle(id));
     }
 }

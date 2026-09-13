@@ -213,6 +213,7 @@ class SubastaLiquidacionWorkerTest {
                 subastaId,
                 EstadoSubasta.ACTIVA,
                 BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 LocalDateTime.now(),
                 null
         );

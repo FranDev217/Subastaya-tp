@@ -10,6 +10,7 @@ public record SubastaEvento(
         Long subastaId,
         EstadoSubasta estado,
         BigDecimal montoActual,
+        BigDecimal incrementoMinimo,
         LocalDateTime fechaFin,
         PujaResponse ultimaPuja
 ) {

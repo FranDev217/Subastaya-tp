@@ -99,7 +99,13 @@ function CatalogoPage() {
           {!cargando && !error && subastas.length > 0 && (
             <div className="catalogo-page__grid">
               {subastas.map((subasta) => (
-                <SubastaCard key={subasta.id} subasta={subasta} />
+                <Link
+                  key={subasta.id}
+                  to={`/subasta/${subasta.id}`}
+                  className="catalogo-page__card-link"
+                >
+                  <SubastaCard subasta={subasta} />
+                </Link>
               ))}
             </div>
           )}

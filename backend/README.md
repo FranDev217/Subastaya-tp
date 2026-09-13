@@ -31,7 +31,7 @@ Trabajo Práctico de la materia Proyecto de Software - Ing. en Informática.
   sin verbos en la URL.
 - **Tiempo real - WebSocket + STOMP:** para evitar polling. Endpoint `ws://localhost:8080/ws`. Handshake HTTP con `101 Switching Protocols`. Sobre el tubo TCP se usa STOMP:
   - Cliente pide estado inicial por `/app/subastas/{id}` -> recibe `ESTADO_ACTUAL`.
-  - Cliente se suscribe a `/topic/subastas/{id}` -> recibe broadcast de `NUEVA_PUJA`, `EXTENSION_TIEMPO`, `FINALIZADA`/`DESIERTA`.
+  - Cliente se suscribe a `/topic/subastas/{id}` -> recibe broadcast de `NUEVA_PUJA` (con la extensión anti-sniping embebida en `extendidoPorAntiSniping`), `ESTADO_CAMBIADO`, `FINALIZADA`/`DESIERTA`.
   - Flujo: `POST /api/v1/subastas/{id}/pujas` -> `SubastaNotificador` -> `SimpMessagingTemplate.convertAndSend("/topic/...")`.
   - Tests en `SubastaWebSocketTest.java` con `WebSocketStompClient` real y `BlockingQueue`.
 - **Background Worker:** un proceso `@Scheduled` verifica cada 60s las
@@ -189,7 +189,7 @@ Salida real capturada en una corrida local:
 
 ```
 STATUS 1: 200
-{"id":7,"subastaId":1,"compradorId":3,"compradorNombre":"Comprador Dos","monto":48000,"fechaPuja":"2026-08-30T21:47:37.8931072","fechaFinSubasta":"2026-08-30T22:08:20.989266","extendidoPorAntiSniping":false}
+{"id":7,"subastaId":1,"compradorId":3,"compradorAlias":"Pujador #3","monto":48000,"fechaPuja":"2026-08-30T21:47:37.8931072","fechaFinSubasta":"2026-08-30T22:08:20.989266","incrementoMinimo":1000,"extendidoPorAntiSniping":false}
 STATUS 2: 409
 {"timestamp":"2026-08-30T21:47:37.9016031","status":409,"mensaje":"El recurso fue modificado por otra operación concurrente, reintentá la solicitud","errores":null}
 ```
@@ -337,6 +337,46 @@ Funcionalidades:
   consistente con `JacksonConfig`.
 - Navegación con `react-router-dom`: `/` (catálogo), `/login` y `/publicar`.
 
+## Módulo 3: Sala de Subasta en Vivo
+
+### Backend
+
+Endpoints REST de apoyo a la sala:
+
+- `GET /api/v1/subastas/{id}` — detalle para la sala: `precioBase`,
+  `incrementoMinimo`, `ofertaActual`, `cantidadPujas`, `liderId`, fechas y
+  estado (`SubastaDetalleResponse`). `404` si no existe.
+- `GET /api/v1/subastas/{id}/pujas` — historial cronológico descendente con
+  `alias`, `monto` y `fechaPuja` (`PujaHistorialResponse`). `404` si la
+  subasta no existe.
+
+Anonimización y eventos en vivo:
+
+- El nombre del postor se expone como **seudónimo** `Pujador #<usuarioId>`
+  (`PujaResponse.aliasDe`); se mantiene `compradorId` para que el cliente
+  detecte si lidera o fue superado.
+- `SubastaEvento` incorpora `incrementoMinimo` para que la consola calcule
+  `ofertaActual + incrementoMinimo` sin depender de una recarga REST.
+- La extensión por anti-sniping sigue viajando embebida en `NUEVA_PUJA`:
+  `PujaResponse.extendidoPorAntiSniping` + `fechaFin` ya extendida.
+
+### Frontend
+
+- Ruta `/subasta/:id` (`SalaSubastaPage`); las cards del catálogo enlazan ahí.
+- Cliente STOMP `@stomp/stompjs` sobre `ws://.../ws` (Vite proxea `/ws`):
+  `useSalaSubasta` carga el estado inicial por REST y se suscribe a
+  `/app/subastas/{id}` (snapshot `ESTADO_ACTUAL`) y `/topic/subastas/{id}`
+  (`NUEVA_PUJA`, `ESTADO_CAMBIADO`, `FINALIZADA`/`DESIERTA`), con reconexión.
+- `TemporizadorVivo`: cuenta regresiva; ámbar en el último minuto y rojo
+  pulsante en los últimos 10 segundos.
+- `HistorialPujas`: últimas 20 ofertas con alias, monto y hora exacta,
+  resaltando la más reciente.
+- `ConsolaPuja`: sugiere `ofertaActual + incrementoMinimo`, permite un monto
+  mayor y muestra el estado **Liderando** / **Superado**; pide login para
+  ofertar.
+- `ToastProvider` (`useToasts`): confirma pujas, avisa fondos insuficientes,
+  extensión anti-sniping, outbid y cierre de la subasta.
+
 ## Convenciones de trabajo
 
 - Ramas de trabajo: `feature/nombre-de-la-funcionalidad`
@@ -355,4 +395,5 @@ Funcionalidades:
 - [x] Autenticación básica (login, sin sesión/token todavía)
 - [x] Módulo 1: Catálogo y exploración de subastas
 - [x] Módulo 2: Creación y publicación de subastas (vendedor)
+- [x] Módulo 3: Sala de subasta en vivo (puja dinámica, historial, toasts)
 - [ ] Documentación Swagger completa.

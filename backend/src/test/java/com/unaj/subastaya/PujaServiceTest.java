@@ -106,6 +106,8 @@ class PujaServiceTest {
 
         assertThat(response.extendidoPorAntiSniping()).isTrue();
         assertThat(response.fechaFinSubasta()).isEqualTo(fechaFinCercana.plusMinutes(2));
+        assertThat(response.compradorAlias()).isEqualTo("Pujador #" + USUARIO_COMPRADOR_2);
+        assertThat(response.incrementoMinimo()).isEqualByComparingTo("500");
 
         List<AuditoriaLog> auditoria = auditoriaDe(SUBASTA_FIGURA);
         assertThat(auditoria).extracting(AuditoriaLog::getAccion).containsExactly(AccionAuditoria.EXTENSION_TIEMPO);

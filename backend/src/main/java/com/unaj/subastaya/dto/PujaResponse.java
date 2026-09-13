@@ -7,10 +7,15 @@ public record PujaResponse(
         Long id,
         Long subastaId,
         Long compradorId,
-        String compradorNombre,
+        String compradorAlias,
         BigDecimal monto,
         LocalDateTime fechaPuja,
         LocalDateTime fechaFinSubasta,
+        BigDecimal incrementoMinimo,
         boolean extendidoPorAntiSniping
 ) {
+
+    public static String aliasDe(Long usuarioId) {
+        return "Pujador #" + usuarioId;
+    }
 }
