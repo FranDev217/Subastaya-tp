@@ -68,7 +68,6 @@ function ConsolaPuja({
   estado,
   liderId,
   usuario,
-  errorPuja,
   enviando,
   onPujar,
 }) {
@@ -125,12 +124,6 @@ function ConsolaPuja({
           enviando={enviando}
           onPujar={onPujar}
         />
-      )}
-
-      {errorPuja && (
-        <p className="consola__error" role="alert">
-          {errorPuja}
-        </p>
       )}
     </section>
   );

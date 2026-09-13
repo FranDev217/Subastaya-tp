@@ -169,13 +169,3 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-.consola__error {
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-radius: var(--radius-md);
-  background: var(--color-error-light);
-  border: 1px solid var(--color-error-border);
-  color: #991b1b;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-}
