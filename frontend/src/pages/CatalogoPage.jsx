@@ -57,6 +57,11 @@ function CatalogoPage() {
             <Link to="/publicar" className="catalogo-page__nav-link catalogo-page__nav-link--primary">
               Publicar subasta
             </Link>
+            {usuario && (
+              <Link to="/billetera" className="catalogo-page__nav-link">
+                Mi billetera
+              </Link>
+            )}
             <Link to="/login" className="catalogo-page__nav-link">
               {usuario ? `Hola, ${usuario.nombre}` : 'Iniciar sesión'}
             </Link>
