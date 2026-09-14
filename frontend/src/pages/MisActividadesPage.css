@@ -1,0 +1,203 @@
+.actividades-page {
+  min-height: 100vh;
+  background: var(--bg-page);
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  text-align: left;
+  max-width: 1100px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.actividades-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-lg);
+  padding-bottom: var(--spacing-xl);
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: var(--spacing-xl);
+}
+
+.actividades-page__titulo {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.actividades-page__subtitulo {
+  margin: var(--spacing-xs) 0 0;
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+}
+
+.actividades-page__volver {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.actividades-page__volver:hover {
+  text-decoration: underline;
+}
+
+.actividades-page__tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-2xl);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.actividades-page__tab {
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.actividades-page__tab:hover {
+  color: var(--text-primary);
+}
+
+.actividades-page__tab--activo {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.actividades-page__estado {
+  padding: var(--spacing-2xl) 0;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.actividades-page__estado--error {
+  background: var(--color-error-light);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-lg);
+  color: #991b1b;
+  padding: var(--spacing-xl);
+}
+
+.actividades-page__estado--error button {
+  margin-top: var(--spacing-sm);
+  font: inherit;
+  font-weight: var(--font-weight-semibold);
+  padding: 8px var(--spacing-lg);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-error);
+  cursor: pointer;
+}
+
+.actividades-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-xl);
+}
+
+@media (min-width: 640px) {
+  .actividades-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .actividades-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.actividad-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.actividad-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.actividad-card__imagen {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background: var(--bg-hover);
+}
+
+.actividad-card__contenido {
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.actividad-card__badge {
+  align-self: flex-start;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 4px var(--spacing-md);
+  border-radius: var(--radius-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-inverse);
+}
+
+.actividad-card__badge--gano,
+.actividad-card__badge--lidera,
+.actividad-card__badge--activa {
+  background: var(--color-success);
+}
+
+.actividad-card__badge--perdio,
+.actividad-card__badge--superado {
+  background: var(--color-error);
+}
+
+.actividad-card__badge--programada {
+  background: var(--color-warning);
+}
+
+.actividad-card__badge--finalizada {
+  background: var(--color-neutral);
+}
+
+.actividad-card__badge--desierta {
+  background: #9ca3af;
+}
+
+.actividad-card__titulo {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.actividad-card__datos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-light);
+}
+
+.actividad-card__datos strong {
+  color: var(--text-primary);
+}

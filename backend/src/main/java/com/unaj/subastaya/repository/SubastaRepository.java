@@ -18,6 +18,8 @@ public interface SubastaRepository extends JpaRepository<Subasta, Long> {
 
     List<Subasta> findByEstadoAndFechaInicioLessThanEqual(EstadoSubasta estado, LocalDateTime fecha);
 
+    List<Subasta> findByVendedorIdOrderByFechaInicioDesc(Long vendedorId);
+
     @Query("SELECT s FROM Subasta s WHERE " +
            "(:estado IS NULL OR s.estado = :estado) AND " +
            "(:categoriaId IS NULL OR s.categoria.id = :categoriaId) AND " +

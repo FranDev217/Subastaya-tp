@@ -62,6 +62,11 @@ function CatalogoPage() {
                 Mi billetera
               </Link>
             )}
+            {usuario && (
+              <Link to="/mis-actividades" className="catalogo-page__nav-link">
+                Mis actividades
+              </Link>
+            )}
             <Link to="/login" className="catalogo-page__nav-link">
               {usuario ? `Hola, ${usuario.nombre}` : 'Iniciar sesión'}
             </Link>
