@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import BilleteraPage from './pages/BilleteraPage'
 import CatalogoPage from './pages/CatalogoPage'
 import LoginPage from './pages/LoginPage'
+import MisActividadesPage from './pages/MisActividadesPage'
 import PublicarSubastaPage from './pages/PublicarSubastaPage'
 import SalaSubastaPage from './pages/SalaSubastaPage'
 import { ToastProvider } from './components/Toasts/ToastProvider'
@@ -15,6 +16,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/publicar" element={<PublicarSubastaPage />} />
           <Route path="/billetera" element={<BilleteraPage />} />
+          <Route path="/mis-actividades" element={<MisActividadesPage />} />
           <Route path="/subasta/:id" element={<SalaSubastaPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
