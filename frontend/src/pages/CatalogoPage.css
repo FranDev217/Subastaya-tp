@@ -72,6 +72,11 @@
   gap: var(--spacing-2xl);
 }
 
+.catalogo-page__carruseles {
+  display: flex;
+  flex-direction: column;
+}
+
 .catalogo-page__sidebar {
   width: 100%;
 }

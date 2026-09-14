@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { obtenerSubastas } from "../services/subastasService";
 import SubastaCard from "../components/SubastaCard/SubastaCard";
+import CarruselSubastas from "../components/CarruselSubastas/CarruselSubastas";
 import FiltrosPanel from "../components/FiltrosPanel/FiltrosPanel";
 import OrdenSelector from "../components/OrdenSelector/OrdenSelector";
 import "./CatalogoPage.css";
@@ -20,6 +21,8 @@ function usuarioGuardado() {
 function CatalogoPage() {
   const usuario = usuarioGuardado();
   const [subastas, setSubastas] = useState([]);
+  const [subastasActivas, setSubastasActivas] = useState([]);
+  const [subastasProgramadas, setSubastasProgramadas] = useState([]);
   const [filtros, setFiltros] = useState({
     estado: null,
     categoriaId: null,
@@ -48,6 +51,29 @@ function CatalogoPage() {
     fetchSubastas();
   }, [filtros, sort]);
 
+  useEffect(() => {
+    let vigente = true;
+
+    Promise.all([
+      obtenerSubastas({ estado: "ACTIVA" }),
+      obtenerSubastas({ estado: "PROGRAMADA" }),
+    ])
+      .then(([activas, programadas]) => {
+        if (!vigente) return;
+        setSubastasActivas(activas);
+        setSubastasProgramadas(programadas);
+      })
+      .catch(() => {
+        if (!vigente) return;
+        setSubastasActivas([]);
+        setSubastasProgramadas([]);
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
   return (
     <div className="catalogo-page">
       <header className="catalogo-page__header">
@@ -74,6 +100,19 @@ function CatalogoPage() {
         </div>
         <OrdenSelector valor={sort} onChange={setSort} />
       </header>
+
+      <div className="catalogo-page__carruseles">
+        <CarruselSubastas
+          titulo="Subastas activas"
+          subastas={subastasActivas}
+          direccion="derecha"
+        />
+        <CarruselSubastas
+          titulo="Próximamente"
+          subastas={subastasProgramadas}
+          direccion="izquierda"
+        />
+      </div>
 
       <div className="catalogo-page__layout">
         <aside className="catalogo-page__sidebar">
