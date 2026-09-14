@@ -65,6 +65,9 @@ function LoginPage() {
             <Link className="login-link" to="/publicar">
               Publicar subasta
             </Link>
+            <Link className="login-link" to="/billetera">
+              Mi billetera
+            </Link>
           </div>
           <button type="button" className="login-button login-button-secondary" onClick={handleLogout}>
             Cerrar sesión

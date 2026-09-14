@@ -2,6 +2,7 @@ package com.unaj.subastaya;
 
 import com.unaj.subastaya.dto.AuditoriaLogResponse;
 import com.unaj.subastaya.dto.BilleteraResponse;
+import com.unaj.subastaya.dto.MovimientoResponse;
 import com.unaj.subastaya.model.AccionAuditoria;
 import com.unaj.subastaya.model.AuditoriaLog;
 import com.unaj.subastaya.model.TipoEntidadAuditoria;
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.tuple;
 class BilleteraServiceTest {
 
     private static final long USUARIO_VENDEDOR = 1L;
+    private static final long USUARIO_COMPRADOR_1 = 2L;
     private static final BigDecimal MONTO_DEPOSITO = new BigDecimal("15000.00");
 
     @Autowired
@@ -68,6 +70,19 @@ class BilleteraServiceTest {
             assertThat(registro.getUsuario().getId()).isEqualTo(USUARIO_VENDEDOR);
             assertThat(registro.getDetalleJson()).contains("15000");
         });
+    }
+
+    @Test
+    void obtenerMovimientosDevuelveElHistorialOrdenadoPorFechaDesc() {
+        billeteraService.depositar(USUARIO_COMPRADOR_1, MONTO_DEPOSITO);
+
+        List<MovimientoResponse> movimientos = billeteraService.obtenerMovimientos(USUARIO_COMPRADOR_1);
+
+        assertThat(movimientos.get(0).tipo()).isEqualTo(TipoMovimiento.DEPOSITO);
+        assertThat(movimientos.get(0).monto()).isEqualByComparingTo(MONTO_DEPOSITO);
+        assertThat(movimientos)
+                .extracting(MovimientoResponse::tipo)
+                .contains(TipoMovimiento.DEPOSITO, TipoMovimiento.RETENCION);
     }
 
     @Test
