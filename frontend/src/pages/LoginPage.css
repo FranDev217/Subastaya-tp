@@ -64,7 +64,7 @@
   border-radius: 8px;
   border: 1px solid var(--accent-border);
   background: var(--accent);
-  color: #fff;
+  color: var(--text-inverse);
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
@@ -83,9 +83,9 @@
 .login-error {
   padding: 10px 12px;
   border-radius: 8px;
-  background: rgba(220, 38, 38, 0.12);
-  border: 1px solid rgba(220, 38, 38, 0.4);
-  color: var(--text-h);
+  background: var(--color-error-light);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error-text);
   font-size: 14px;
 }
 
