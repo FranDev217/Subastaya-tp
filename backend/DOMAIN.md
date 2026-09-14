@@ -246,18 +246,22 @@ Reglas:
 activa estándar, y las transacciones de `Ledger` que respalden los depósitos
 y el `saldo_retenido` de $45.000 de `comprador1`.
 
-## 4. API de referencia (a ampliar)
+## 4. API de referencia
 
 | Endpoint                                        | Propósito                                                           |
 | ----------------------------------------------- | ------------------------------------------------------------------- |
 | `POST /api/v1/auth/login`                       | Login: valida email + contraseña, devuelve la identidad del usuario |
 | `GET /api/v1/subastas`                          | Listado con paginación y filtros (estado, categoría, precio, orden) |
 | `POST /api/v1/subastas`                         | Creación de subasta por el vendedor (`201` + `Location`)            |
+| `GET /api/v1/subastas/categorias`               | Listado de categorías                                               |
 | `GET /api/v1/subastas/{id}`                     | Detalle + estado + puja actual                                      |
 | `GET /api/v1/subastas/{id}/pujas`               | Historial de pujas de una subasta                                   |
 | `POST /api/v1/subastas/{id}/pujas`              | Nueva oferta (valida saldo, incremento, anti-sniping)               |
 | `GET /api/v1/billeteras/{usuarioId}`            | Desglose de saldos                                                  |
 | `POST /api/v1/billeteras/{usuarioId}/depositos` | Acreditación simulada de fondos                                     |
+| `GET /api/v1/billeteras/{usuarioId}/movimientos`| Historial de movimientos (Ledger) de la billetera                   |
+| `GET /api/v1/usuarios/{usuarioId}/publicaciones`| Subastas creadas por el usuario como vendedor + recaudación         |
+| `GET /api/v1/usuarios/{usuarioId}/compras`      | Subastas donde el usuario pujó, con su mejor oferta y si lidera     |
 | `GET /api/v1/auditoria?entidad=&entidadId=`     | Trazabilidad de eventos de auditoría                                |
 
 Nombres de recursos en plural, sin verbos en la URL (según lineamiento de la
