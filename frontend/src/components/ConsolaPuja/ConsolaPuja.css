@@ -43,12 +43,12 @@
 }
 
 .consola__estado--lider {
-  color: var(--color-success-hover);
-  background: rgba(16, 185, 129, 0.12);
+  color: var(--color-success-text);
+  background: var(--color-success-light);
 }
 
 .consola__estado--superado {
-  color: var(--color-error-hover);
+  color: var(--color-error-text);
   background: var(--color-error-light);
 }
 

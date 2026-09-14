@@ -61,7 +61,7 @@
 }
 
 .estado-desierta .subasta-card__badge {
-  background: #9ca3af;
+  background: var(--color-neutral-hover);
   color: var(--text-inverse);
 }
 
