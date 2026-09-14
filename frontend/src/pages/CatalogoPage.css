@@ -95,7 +95,7 @@
   background: var(--color-error-light);
   border: 1px solid var(--color-error-border);
   border-radius: var(--radius-lg);
-  color: #991b1b;
+  color: var(--color-error-text);
 }
 
 .catalogo-page__estado--error button {
