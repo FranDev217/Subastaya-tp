@@ -115,22 +115,30 @@ así no hace falta configurar CORS.
 
 ## Estructura del proyecto
 
+```text
 subastaya-tp/
 ├── backend/
-│ ├── src/main/java/com/unaj/subastaya/
-│ │ ├── controller/ # Endpoints REST
-│ │ ├── service/ # Lógica de negocio
-│ │ ├── repository/ # Acceso a datos (Spring Data JPA)
-│ │ ├── model/ # Entidades JPA
-│ │ └── dto/ # Objetos de transferencia (request/response)
-│ ├── src/main/resources/
-│ │ ├── db/migration/ # Migraciones Flyway (V1\_\_init.sql, etc.)
-│ │ └── application.properties
-│ └── docker-compose.yaml # Definición de PostgreSQL local
-└── frontend/ # Vite + React
-└── src/
-├── pages/ # Pantallas (ej. LoginPage)
-└── api/ # Clientes fetch hacia el backend
+│   ├── src/main/java/com/unaj/subastaya/
+│   │   ├── controller/   # Endpoints REST
+│   │   ├── service/      # Lógica de negocio
+│   │   ├── repository/   # Acceso a datos (Spring Data JPA)
+│   │   ├── model/        # Entidades JPA
+│   │   ├── dto/          # Objetos de transferencia (request/response)
+│   │   ├── exception/    # Excepciones de negocio + GlobalExceptionHandler
+│   │   └── config/       # WebSocket, OpenAPI, seguridad (PasswordEncoder)
+│   ├── src/main/resources/
+│   │   ├── db/migration/ # Migraciones Flyway (V1__init.sql, etc.)
+│   │   └── application.properties
+│   └── docker-compose.yaml  # Definición de PostgreSQL local
+└── frontend/              # Vite + React
+    └── src/
+        ├── pages/         # Pantallas (CatalogoPage, LoginPage, SalaSubastaPage, etc.)
+        ├── components/    # Piezas reusables (SubastaCard, Toasts, HistorialPujas, etc.)
+        ├── services/      # Clientes fetch hacia el backend (subastas, billetera, actividad)
+        ├── api/           # Cliente de autenticación (authApi.js)
+        ├── hooks/         # useSalaSubasta, useCountdown
+        └── context/       # ToastsContext
+```
 
 ![img.png](img.png)
 _(Se irá actualizando a medida que se agreguen módulos.)_
@@ -146,28 +154,6 @@ Requiere tener la app corriendo con el seed data (`V2__seed.sql`) aplicado.
 Ejemplo contra la subasta "Notebook Gamer RTX 4070" (id `1`) y el comprador
 `comprador2@test.com` (id `3`), ajustando el `monto` a uno válido según el
 estado actual de la subasta:
-
-## Background Worker de liquidación
-
-Un proceso `@Scheduled` (`SubastaLiquidacionWorker`) corre cada 60 segundos,
-busca subastas `ACTIVA` con `fechaFin` vencida y las cierra:
-
-- **Con ganador:** transfiere el saldo retenido del comprador al vendedor
-  (`BilleteraService.pagar` / `cobrar`), registra `PAGO`/`COBRO` en el Ledger
-  y marca la subasta `FINALIZADA`.
-- **Sin pujas:** marca la subasta `DESIERTA`.
-
-Todo el cierre de una subasta ocurre en una única transacción: si falla el
-débito, no se acredita al vendedor ni se cambia el estado, y la subasta se
-reprocesa en la corrida siguiente. Un error en una subasta no afecta a las
-demás. Cada cierre queda registrado en `auditoria_log` con acción
-`CIERRE_WORKER` y `usuario_id = null` (acción del sistema), y se difunde por
-WebSocket (`TipoEvento.FINALIZADA` / `DESIERTA`).
-
-En tests, el disparo automático se posterga con
-`-Dsubastaya.worker.initial-delay-ms=3600000` (argLine de Surefire) para no
-consumir el seed; los tests invocan `cerrarSubastasVencidas()` manualmente.
-Ver `SubastaLiquidacionWorkerTest`.
 
 ```bash
 BODY='{"compradorId":3,"monto":48000}'
@@ -200,6 +186,28 @@ incrementado por la primera transacción y lanza
 `ObjectOptimisticLockingFailureException`, que el `GlobalExceptionHandler`
 traduce a `409 Conflict` en vez de un `500` genérico. El intento rechazado
 además queda registrado en `auditoria_log` con acción `PUJA_RECHAZADA`.
+
+## Background Worker de liquidación
+
+Un proceso `@Scheduled` (`SubastaLiquidacionWorker`) corre cada 60 segundos,
+busca subastas `ACTIVA` con `fechaFin` vencida y las cierra:
+
+- **Con ganador:** transfiere el saldo retenido del comprador al vendedor
+  (`BilleteraService.pagar` / `cobrar`), registra `PAGO`/`COBRO` en el Ledger
+  y marca la subasta `FINALIZADA`.
+- **Sin pujas:** marca la subasta `DESIERTA`.
+
+Todo el cierre de una subasta ocurre en una única transacción: si falla el
+débito, no se acredita al vendedor ni se cambia el estado, y la subasta se
+reprocesa en la corrida siguiente. Un error en una subasta no afecta a las
+demás. Cada cierre queda registrado en `auditoria_log` con acción
+`CIERRE_WORKER` y `usuario_id = null` (acción del sistema), y se difunde por
+WebSocket (`TipoEvento.FINALIZADA` / `DESIERTA`).
+
+En tests, el disparo automático se posterga con
+`-Dsubastaya.worker.initial-delay-ms=3600000` (argLine de Surefire) para no
+consumir el seed; los tests invocan `cerrarSubastasVencidas()` manualmente.
+Ver `SubastaLiquidacionWorkerTest`.
 
 ## Auditoría de eventos y trazabilidad
 
@@ -253,6 +261,28 @@ Frontend: `frontend/src/pages/LoginPage.jsx` consume este endpoint vía
 `http://localhost:8080` (`frontend/vite.config.js`), así no hace falta
 configurar CORS. Para probarlo end-to-end: levantar el backend
 (`./mvnw spring-boot:run`), y en otra terminal `cd frontend && pnpm install && pnpm dev`.
+
+## Documentación Swagger (OpenAPI)
+
+Con el backend corriendo, la documentación interactiva está en
+`http://localhost:8080/swagger-ui/index.html` (spec cruda en `/v3/api-docs`).
+
+Cubre los 6 controllers REST (`Autenticación`, `Subastas`, `Pujas`,
+`Billeteras`, `Mis actividades`, `Auditoría`) — 13 endpoints en total:
+
+- Cada operación tiene resumen y descripción de la regla de negocio que
+  aplica (ej. qué dispara el anti-sniping, cuándo aparece `recaudacion` en
+  "mis publicaciones").
+- Cada respuesta de error documentada (`400`/`401`/`404`/`409`/`422`) usa el
+  schema real de `ErrorResponse`, con ejemplos.
+- Los DTOs de request (`LoginRequest`, `PujaRequest`, `SubastaRequest`,
+  `DepositoRequest`) tienen `@Schema` con descripción y ejemplo por campo.
+- `springdoc.default-produces-media-type=application/json` para que las
+  respuestas no queden como `*/*` genérico.
+
+La sala en vivo (`WebSocketConfig`, `SubastaWebSocketController`) no aparece
+acá: STOMP sobre WebSocket no es representable en OpenAPI 3. Ese flujo ya
+está documentado aparte en la sección de Módulo 3 y en `DOMAIN.md`.
 
 ## Módulo 1: Catálogo y Exploración de Subastas
 
@@ -396,4 +426,6 @@ Anonimización y eventos en vivo:
 - [x] Módulo 1: Catálogo y exploración de subastas
 - [x] Módulo 2: Creación y publicación de subastas (vendedor)
 - [x] Módulo 3: Sala de subasta en vivo (puja dinámica, historial, toasts)
-- [ ] Documentación Swagger completa.
+- [x] Módulo 4: Billetera virtual (saldo, carga simulada, historial de movimientos)
+- [x] Módulo 5: Panel de usuario / Mis actividades (compras-pujas y publicaciones)
+- [x] Documentación Swagger completa.
