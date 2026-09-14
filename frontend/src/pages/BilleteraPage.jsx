@@ -113,91 +113,93 @@ function BilleteraPage() {
 
   return (
     <div className="billetera-page">
-      <header className="billetera-page__header">
-        <div>
-          <h1 className="billetera-page__titulo">Mi billetera</h1>
-          <p className="billetera-page__subtitulo">Hola, {usuario.nombre}</p>
-        </div>
-        <Link className="billetera-page__volver" to="/">
-          ← Volver al catálogo
-        </Link>
-      </header>
+      <div className="billetera-page__content">
+        <header className="billetera-page__header">
+          <div>
+            <h1 className="billetera-page__titulo">Mi billetera</h1>
+            <p className="billetera-page__subtitulo">Hola, {usuario.nombre}</p>
+          </div>
+          <Link className="billetera-page__volver" to="/">
+            ← Volver al catálogo
+          </Link>
+        </header>
 
-      {cargando && <p className="billetera-page__estado">Cargando billetera…</p>}
+        {cargando && <p className="billetera-page__estado">Cargando billetera…</p>}
 
-      {error && !cargando && (
-        <div className="billetera-page__estado billetera-page__estado--error" role="alert">
-          <p>Error: {error}</p>
-          <button type="button" onClick={() => setVersion((anterior) => anterior + 1)}>
-            Reintentar
-          </button>
-        </div>
-      )}
+        {error && !cargando && (
+          <div className="billetera-page__estado billetera-page__estado--error" role="alert">
+            <p>Error: {error}</p>
+            <button type="button" onClick={() => setVersion((anterior) => anterior + 1)}>
+              Reintentar
+            </button>
+          </div>
+        )}
 
-      {!cargando && !error && saldo && (
-        <>
-          <section className="billetera-saldo">
-            <div className="billetera-saldo__card">
-              <span className="billetera-saldo__label">Saldo total</span>
-              <span className="billetera-saldo__monto">{formatearMonto(saldo.saldoTotal)}</span>
-            </div>
-            <div className="billetera-saldo__card billetera-saldo__card--retenido">
-              <span className="billetera-saldo__label">Retenido / en garantía</span>
-              <span className="billetera-saldo__monto">{formatearMonto(saldo.saldoRetenido)}</span>
-            </div>
-            <div className="billetera-saldo__card billetera-saldo__card--disponible">
-              <span className="billetera-saldo__label">Disponible</span>
-              <span className="billetera-saldo__monto">{formatearMonto(saldo.saldoDisponible)}</span>
-            </div>
-          </section>
+        {!cargando && !error && saldo && (
+          <>
+            <section className="billetera-saldo">
+              <div className="billetera-saldo__card">
+                <span className="billetera-saldo__label">Saldo total</span>
+                <span className="billetera-saldo__monto">{formatearMonto(saldo.saldoTotal)}</span>
+              </div>
+              <div className="billetera-saldo__card billetera-saldo__card--retenido">
+                <span className="billetera-saldo__label">Retenido / en garantía</span>
+                <span className="billetera-saldo__monto">{formatearMonto(saldo.saldoRetenido)}</span>
+              </div>
+              <div className="billetera-saldo__card billetera-saldo__card--disponible">
+                <span className="billetera-saldo__label">Disponible</span>
+                <span className="billetera-saldo__monto">{formatearMonto(saldo.saldoDisponible)}</span>
+              </div>
+            </section>
 
-          <section className="billetera-deposito">
-            <h2 className="billetera-deposito__titulo">Cargar saldo (simulado)</h2>
-            <form className="billetera-deposito__form" onSubmit={handleDepositar}>
-              <label className="billetera-deposito__campo">
-                <span>Monto a acreditar</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  inputMode="decimal"
-                  placeholder="10000"
-                  value={monto}
-                  onChange={(event) => setMonto(event.target.value)}
-                  disabled={depositando}
-                />
-              </label>
-              <button type="submit" className="billetera-deposito__enviar" disabled={depositando}>
-                {depositando ? 'Acreditando…' : 'Cargar saldo'}
-              </button>
-            </form>
-          </section>
+            <section className="billetera-deposito">
+              <h2 className="billetera-deposito__titulo">Cargar saldo (simulado)</h2>
+              <form className="billetera-deposito__form" onSubmit={handleDepositar}>
+                <label className="billetera-deposito__campo">
+                  <span>Monto a acreditar</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    inputMode="decimal"
+                    placeholder="10000"
+                    value={monto}
+                    onChange={(event) => setMonto(event.target.value)}
+                    disabled={depositando}
+                  />
+                </label>
+                <button type="submit" className="billetera-deposito__enviar" disabled={depositando}>
+                  {depositando ? 'Acreditando…' : 'Cargar saldo'}
+                </button>
+              </form>
+            </section>
 
-          <section className="billetera-historial">
-            <h2 className="billetera-historial__titulo">Historial de movimientos</h2>
-            {movimientos.length === 0 ? (
-              <p className="billetera-historial__vacio">Todavía no tenés movimientos.</p>
-            ) : (
-              <ul className="billetera-historial__lista">
-                {movimientos.map((movimiento) => (
-                  <li key={movimiento.id} className="billetera-historial__item">
-                    <span
-                      className={`billetera-historial__tipo billetera-historial__tipo--${movimiento.tipo.toLowerCase()}`}
-                    >
-                      {ETIQUETA_TIPO[movimiento.tipo] ?? movimiento.tipo}
-                    </span>
-                    <span className="billetera-historial__detalle">
-                      {movimiento.subastaTitulo ?? '—'}
-                    </span>
-                    <span className="billetera-historial__monto">{formatearMonto(movimiento.monto)}</span>
-                    <span className="billetera-historial__fecha">{formatearFecha(movimiento.fecha)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </>
-      )}
+            <section className="billetera-historial">
+              <h2 className="billetera-historial__titulo">Historial de movimientos</h2>
+              {movimientos.length === 0 ? (
+                <p className="billetera-historial__vacio">Todavía no tenés movimientos.</p>
+              ) : (
+                <ul className="billetera-historial__lista">
+                  {movimientos.map((movimiento) => (
+                    <li key={movimiento.id} className="billetera-historial__item">
+                      <span
+                        className={`billetera-historial__tipo billetera-historial__tipo--${movimiento.tipo.toLowerCase()}`}
+                      >
+                        {ETIQUETA_TIPO[movimiento.tipo] ?? movimiento.tipo}
+                      </span>
+                      <span className="billetera-historial__detalle">
+                        {movimiento.subastaTitulo ?? '—'}
+                      </span>
+                      <span className="billetera-historial__monto">{formatearMonto(movimiento.monto)}</span>
+                      <span className="billetera-historial__fecha">{formatearFecha(movimiento.fecha)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
+      </div>
     </div>
   )
 }

@@ -85,6 +85,7 @@ function MisActividadesPage() {
 
   return (
     <div className="actividades-page">
+    <div className="actividades-page__content">
       <header className="actividades-page__header">
         <div>
           <h1 className="actividades-page__titulo">Mis actividades</h1>
@@ -207,6 +208,7 @@ function MisActividadesPage() {
           })}
         </div>
       )}
+    </div>
     </div>
   )
 }
