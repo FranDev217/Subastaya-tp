@@ -1,6 +1,7 @@
 package com.unaj.subastaya.service;
 
 import com.unaj.subastaya.dto.BilleteraResponse;
+import com.unaj.subastaya.dto.MovimientoResponse;
 import com.unaj.subastaya.exception.RecursoNoEncontradoException;
 import com.unaj.subastaya.exception.SaldoInsuficienteException;
 import com.unaj.subastaya.model.AccionAuditoria;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,14 @@ public class BilleteraService {
     @Transactional(readOnly = true)
     public BilleteraResponse obtenerSaldo(Long usuarioId) {
         return toResponse(obtenerBilletera(usuarioId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<MovimientoResponse> obtenerMovimientos(Long usuarioId) {
+        Billetera billetera = obtenerBilletera(usuarioId);
+        return transaccionLedgerRepository.findByBilleteraIdOrderByFechaDesc(billetera.getId()).stream()
+                .map(this::toMovimientoResponse)
+                .toList();
     }
 
     @Transactional
@@ -103,6 +113,18 @@ public class BilleteraService {
                 .subasta(subasta)
                 .build();
         transaccionLedgerRepository.save(movimiento);
+    }
+
+    private MovimientoResponse toMovimientoResponse(TransaccionLedger movimiento) {
+        Subasta subasta = movimiento.getSubasta();
+        return new MovimientoResponse(
+                movimiento.getId(),
+                movimiento.getTipo(),
+                movimiento.getMonto(),
+                movimiento.getFecha(),
+                subasta != null ? subasta.getId() : null,
+                subasta != null ? subasta.getTitulo() : null
+        );
     }
 
     private BilleteraResponse toResponse(Billetera billetera) {
