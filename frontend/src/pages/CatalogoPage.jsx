@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { obtenerSubastas } from "../services/subastasService";
 import SubastaCard from "../components/SubastaCard/SubastaCard";
+import CarruselSubastas from "../components/CarruselSubastas/CarruselSubastas";
 import FiltrosPanel from "../components/FiltrosPanel/FiltrosPanel";
 import OrdenSelector from "../components/OrdenSelector/OrdenSelector";
 import "./CatalogoPage.css";
@@ -20,6 +21,8 @@ function usuarioGuardado() {
 function CatalogoPage() {
   const usuario = usuarioGuardado();
   const [subastas, setSubastas] = useState([]);
+  const [subastasActivas, setSubastasActivas] = useState([]);
+  const [subastasProgramadas, setSubastasProgramadas] = useState([]);
   const [filtros, setFiltros] = useState({
     estado: null,
     categoriaId: null,
@@ -48,13 +51,36 @@ function CatalogoPage() {
     fetchSubastas();
   }, [filtros, sort]);
 
+  useEffect(() => {
+    let vigente = true;
+
+    Promise.all([
+      obtenerSubastas({ estado: "ACTIVA" }),
+      obtenerSubastas({ estado: "PROGRAMADA" }),
+    ])
+      .then(([activas, programadas]) => {
+        if (!vigente) return;
+        setSubastasActivas(activas);
+        setSubastasProgramadas(programadas);
+      })
+      .catch(() => {
+        if (!vigente) return;
+        setSubastasActivas([]);
+        setSubastasProgramadas([]);
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
   return (
     <div className="catalogo-page">
       <header className="catalogo-page__header">
         <div className="catalogo-page__barra">
           <h1 className="catalogo-page__titulo">SubastasYa</h1>
           <nav className="catalogo-page__nav">
-            <Link to="/publicar" className="catalogo-page__nav-link catalogo-page__nav-link--primary">
+            <Link to="/publicar" className="catalogo-page__nav-link">
               Publicar subasta
             </Link>
             {usuario && (
@@ -68,15 +94,35 @@ function CatalogoPage() {
               </Link>
             )}
             <Link to="/login" className="catalogo-page__nav-link">
-              {usuario ? `Hola, ${usuario.nombre}` : 'Iniciar sesión'}
+              {usuario ? `Hola, ${usuario.nombre}` : "Iniciar sesión"}
             </Link>
           </nav>
         </div>
-        <OrdenSelector valor={sort} onChange={setSort} />
       </header>
 
+      <div className="catalogo-page__video-wrapper">
+        <video className="catalogo-page__video" autoPlay muted loop playsInline>
+          <source src="/videos/subastas.mp4" type="video/mp4" />
+        </video>
+      </div>
+
+      <div className="catalogo-page__carruseles">
+        <CarruselSubastas
+          titulo="Subastas activas"
+          subastas={subastasActivas}
+          direccion="derecha"
+        />
+        <CarruselSubastas
+          titulo="Próximamente"
+          subastas={subastasProgramadas}
+          direccion="izquierda"
+        />
+      </div>
+      <hr className="catalogo-page__separador" />
       <div className="catalogo-page__layout">
         <aside className="catalogo-page__sidebar">
+          <OrdenSelector valor={sort} onChange={setSort} />
+          <hr className="catalogo-page__separador" />
           <FiltrosPanel filtros={filtros} onFiltrosChange={setFiltros} />
         </aside>
 
