@@ -121,19 +121,20 @@ function PublicarSubastaPage() {
 
   return (
     <div className="publicar-page">
-      <header className="publicar-page__header">
-        <div>
-          <h1 className="publicar-page__titulo">Publicar subasta</h1>
-          <p className="publicar-page__subtitulo">
-            Completá los datos del producto y la configuración de la subasta.
-          </p>
-        </div>
-        <Link className="publicar-page__volver" to="/">
-          ← Volver al catálogo
-        </Link>
-      </header>
+      <div className="publicar-page__content">
+        <header className="publicar-page__header">
+          <div>
+            <h1 className="publicar-page__titulo">Publicar subasta</h1>
+            <p className="publicar-page__subtitulo">
+              Completá los datos del producto y la configuración de la subasta.
+            </p>
+          </div>
+          <Link className="publicar-page__volver" to="/">
+            ← Volver al catálogo
+          </Link>
+        </header>
 
-      <form className="publicar-form" onSubmit={handleSubmit} noValidate>
+        <form className="publicar-form" onSubmit={handleSubmit} noValidate>
         {subastaCreada && (
           <div className="publicar-mensaje publicar-mensaje--exito" role="status">
             <p>
@@ -290,7 +291,8 @@ function PublicarSubastaPage() {
         <button type="submit" className="publicar-form__enviar" disabled={cargando}>
           {cargando ? 'Publicando…' : 'Publicar subasta'}
         </button>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }

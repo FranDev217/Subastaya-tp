@@ -80,7 +80,7 @@ function CatalogoPage() {
         <div className="catalogo-page__barra">
           <h1 className="catalogo-page__titulo">SubastasYa</h1>
           <nav className="catalogo-page__nav">
-            <Link to="/publicar" className="catalogo-page__nav-link catalogo-page__nav-link--primary">
+            <Link to="/publicar" className="catalogo-page__nav-link">
               Publicar subasta
             </Link>
             {usuario && (
@@ -94,12 +94,17 @@ function CatalogoPage() {
               </Link>
             )}
             <Link to="/login" className="catalogo-page__nav-link">
-              {usuario ? `Hola, ${usuario.nombre}` : 'Iniciar sesión'}
+              {usuario ? `Hola, ${usuario.nombre}` : "Iniciar sesión"}
             </Link>
           </nav>
         </div>
-        <OrdenSelector valor={sort} onChange={setSort} />
       </header>
+
+      <div className="catalogo-page__video-wrapper">
+        <video className="catalogo-page__video" autoPlay muted loop playsInline>
+          <source src="/videos/subastas.mp4" type="video/mp4" />
+        </video>
+      </div>
 
       <div className="catalogo-page__carruseles">
         <CarruselSubastas
@@ -113,9 +118,11 @@ function CatalogoPage() {
           direccion="izquierda"
         />
       </div>
-
+      <hr className="catalogo-page__separador" />
       <div className="catalogo-page__layout">
         <aside className="catalogo-page__sidebar">
+          <OrdenSelector valor={sort} onChange={setSort} />
+          <hr className="catalogo-page__separador" />
           <FiltrosPanel filtros={filtros} onFiltrosChange={setFiltros} />
         </aside>
 

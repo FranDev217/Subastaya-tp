@@ -13,6 +13,27 @@
   border-bottom: 1px solid var(--border-light);
 }
 
+.catalogo-page__video-wrapper {
+  width: 100%;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.catalogo-page__video {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+
+.catalogo-page__separador {
+  border: none;
+  border-top: 1px solid var(--border-light);
+  margin: var(--spacing-2xl) 0;
+  color: var(--border-light);
+}
 .catalogo-page__titulo {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
@@ -42,6 +63,7 @@
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   background: var(--bg-card);
+  align-items: right;
 }
 
 .catalogo-page__nav-link:hover {
