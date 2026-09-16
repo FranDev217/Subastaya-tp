@@ -58,7 +58,7 @@ class AuthControllerTest {
 
     private HttpResponse<String> login(LoginRequest request) throws Exception {
         HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:" + port + "/api/v1/auth/login"))
+                .uri(URI.create("http://localhost:" + port + "/api/v1/sesiones"))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(request)))
                 .build();
