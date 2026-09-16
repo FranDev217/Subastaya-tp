@@ -83,6 +83,14 @@ function MisActividadesPage() {
     return <Navigate to="/login" replace state={{ from: '/mis-actividades' }} />
   }
 
+  // Al cambiar de pestaña vaciamos items en el mismo render que tab: si no, por un
+  // instante "tab" ya es 'publicaciones' pero "items" todavia tiene los datos viejos
+  // de compras (con subastaId, no id), y el .map() de abajo arma keys undefined.
+  function cambiarTab(nuevoTab) {
+    setTab(nuevoTab)
+    setItems([])
+  }
+
   return (
     <div className="actividades-page">
     <div className="actividades-page__content">
@@ -102,7 +110,7 @@ function MisActividadesPage() {
           role="tab"
           aria-selected={tab === 'compras'}
           className={`actividades-page__tab ${tab === 'compras' ? 'actividades-page__tab--activo' : ''}`}
-          onClick={() => setTab('compras')}
+          onClick={() => cambiarTab('compras')}
         >
           Mis compras / pujas
         </button>
@@ -111,7 +119,7 @@ function MisActividadesPage() {
           role="tab"
           aria-selected={tab === 'publicaciones'}
           className={`actividades-page__tab ${tab === 'publicaciones' ? 'actividades-page__tab--activo' : ''}`}
-          onClick={() => setTab('publicaciones')}
+          onClick={() => cambiarTab('publicaciones')}
         >
           Mis publicaciones
         </button>
