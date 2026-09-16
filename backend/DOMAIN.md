@@ -182,10 +182,13 @@ Proceso `@Scheduled` que, para cada subasta vencida (`fecha_fin` pasada y
 
 ### 2.4 Autenticación (login)
 
-`POST /api/v1/auth/login` valida `email` + `password` contra `usuario` con
+`POST /api/v1/sesiones` valida `email` + `password` contra `usuario` con
 `PasswordEncoder` (BCrypt, `spring-security-crypto`) y devuelve la identidad
 del usuario (`id`, `nombre`, `email`). No hay Spring Security completo ni
 sesión/token: es una validación de credenciales, no una capa de autorización.
+Se modela como "crear una sesión" (sustantivo plural, sin verbo en la URL)
+en vez de `/auth/login`, para no romper el lineamiento RESTful del resto de
+la API.
 
 - Email inexistente o contraseña incorrecta → mismo `401` con mensaje
   genérico (`CredencialesInvalidasException`), para no revelar cuál de los
@@ -250,7 +253,7 @@ y el `saldo_retenido` de $45.000 de `comprador1`.
 
 | Endpoint                                        | Propósito                                                           |
 | ----------------------------------------------- | ------------------------------------------------------------------- |
-| `POST /api/v1/auth/login`                       | Login: valida email + contraseña, devuelve la identidad del usuario |
+| `POST /api/v1/sesiones`                         | Login (crea una sesión): valida email + contraseña, devuelve la identidad del usuario |
 | `GET /api/v1/subastas`                          | Listado con paginación y filtros (estado, categoría, precio, orden) |
 | `POST /api/v1/subastas`                         | Creación de subasta por el vendedor (`201` + `Location`)            |
 | `GET /api/v1/subastas/categorias`               | Listado de categorías                                               |
