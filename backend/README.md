@@ -241,8 +241,12 @@ hashear/verificar con BCrypt). El frontend guarda la respuesta en
 `localStorage` y la reutiliza donde haga falta (billetera, pujas), igual que
 ya se hacía pasando `compradorId` explícito en `PujaRequest`.
 
+El login se modela como la creación de una "sesión" (`POST /sesiones`) para
+no meter un verbo en la URL — consistente con el lineamiento RESTful del
+resto de la API, aunque hoy esa sesión no se persista en el servidor.
+
 ```
-POST /api/v1/auth/login
+POST /api/v1/sesiones
 { "email": "comprador1@test.com", "password": "Password123!" }
 ```
 
