@@ -35,6 +35,21 @@
   user-select: none;
   overscroll-behavior-x: contain;
   touch-action: pan-y;
+  --carrusel-fade: 28px;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--carrusel-fade),
+    #000 calc(100% - var(--carrusel-fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 var(--carrusel-fade),
+    #000 calc(100% - var(--carrusel-fade)),
+    transparent 100%
+  );
 }
 
 .carrusel-subastas__track::-webkit-scrollbar {

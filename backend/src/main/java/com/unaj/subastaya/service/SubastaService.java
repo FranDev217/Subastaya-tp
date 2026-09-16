@@ -184,13 +184,22 @@ public class SubastaService {
                 .map(this::toListadoResponse)
                 .toList();
 
-        if ("mayorPuja".equals(sort)) {
-            respuestas = respuestas.stream()
-                    .sorted(Comparator.comparing(SubastaListadoResponse::ofertaActual).reversed())
-                    .toList();
-        }
+        Comparator<SubastaListadoResponse> comparador = "mayorPuja".equals(sort)
+                ? Comparator.comparing(SubastaListadoResponse::ofertaActual).reversed()
+                : Comparator.comparing(SubastaListadoResponse::fechaFin);
 
-        return respuestas;
+        // Activas/programadas primero y finalizadas/desiertas al final, sin importar el
+        // criterio de orden elegido: mezcladas por fecha quedan las terminadas primero,
+        // porque su fechaFin ya pasó (es "menor" que la de una subasta vigente).
+        return respuestas.stream()
+                .sorted(Comparator
+                        .comparing((SubastaListadoResponse r) -> yaTermino(r.estado()))
+                        .thenComparing(comparador))
+                .toList();
+    }
+
+    private boolean yaTermino(EstadoSubasta estado) {
+        return estado == EstadoSubasta.FINALIZADA || estado == EstadoSubasta.DESIERTA;
     }
 
     private SubastaListadoResponse toListadoResponse(Subasta subasta) {

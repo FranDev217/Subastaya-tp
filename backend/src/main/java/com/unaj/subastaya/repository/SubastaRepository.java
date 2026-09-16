@@ -20,6 +20,8 @@ public interface SubastaRepository extends JpaRepository<Subasta, Long> {
 
     List<Subasta> findByVendedorIdOrderByFechaInicioDesc(Long vendedorId);
 
+    // El orden final se resuelve en SubastaService (agrupando activas/programadas antes
+    // que finalizadas/desiertas); este ORDER BY solo da un orden base determinístico.
     @Query("SELECT s FROM Subasta s WHERE " +
            "(:estado IS NULL OR s.estado = :estado) AND " +
            "(:categoriaId IS NULL OR s.categoria.id = :categoriaId) AND " +

@@ -18,11 +18,12 @@ function usuarioGuardado() {
   }
 }
 
+const LIMITE_TERMINAN_PRONTO = 8;
+
 function CatalogoPage() {
   const usuario = usuarioGuardado();
   const [subastas, setSubastas] = useState([]);
-  const [subastasActivas, setSubastasActivas] = useState([]);
-  const [subastasProgramadas, setSubastasProgramadas] = useState([]);
+  const [terminanPronto, setTerminanPronto] = useState([]);
   const [filtros, setFiltros] = useState({
     estado: null,
     categoriaId: null,
@@ -54,19 +55,14 @@ function CatalogoPage() {
   useEffect(() => {
     let vigente = true;
 
-    Promise.all([
-      obtenerSubastas({ estado: "ACTIVA" }),
-      obtenerSubastas({ estado: "PROGRAMADA" }),
-    ])
-      .then(([activas, programadas]) => {
+    obtenerSubastas({ estado: "ACTIVA", sort: "menorTiempo" })
+      .then((activas) => {
         if (!vigente) return;
-        setSubastasActivas(activas);
-        setSubastasProgramadas(programadas);
+        setTerminanPronto(activas.slice(0, LIMITE_TERMINAN_PRONTO));
       })
       .catch(() => {
         if (!vigente) return;
-        setSubastasActivas([]);
-        setSubastasProgramadas([]);
+        setTerminanPronto([]);
       });
 
     return () => {
@@ -78,7 +74,18 @@ function CatalogoPage() {
     <div className="catalogo-page">
       <header className="catalogo-page__header">
         <div className="catalogo-page__barra">
-          <h1 className="catalogo-page__titulo">SubastasYa</h1>
+          <div className="catalogo-page__marca">
+            <h1 className="catalogo-page__titulo">SubastasYa</h1>
+            {terminanPronto.length > 0 && (
+              <span className="catalogo-page__pulso">
+                <span className="catalogo-page__pulso-punto" aria-hidden="true" />
+                {terminanPronto.length}{" "}
+                {terminanPronto.length === 1
+                  ? "subasta activa ahora"
+                  : "subastas activas ahora"}
+              </span>
+            )}
+          </div>
           <nav className="catalogo-page__nav">
             <Link to="/publicar" className="catalogo-page__nav-link">
               Publicar subasta
@@ -104,17 +111,17 @@ function CatalogoPage() {
         <video className="catalogo-page__video" autoPlay muted loop playsInline>
           <source src="/videos/subastas.mp4" type="video/mp4" />
         </video>
+        <div className="catalogo-page__video-overlay">
+          <p className="catalogo-page__video-frase">
+            Pujá en tiempo real. Ganá al mejor precio.
+          </p>
+        </div>
       </div>
 
       <div className="catalogo-page__carruseles">
         <CarruselSubastas
-          titulo="Subastas activas"
-          subastas={subastasActivas}
-          direccion="derecha"
-        />
-        <CarruselSubastas
-          titulo="Próximamente"
-          subastas={subastasProgramadas}
+          titulo="Terminan pronto"
+          subastas={terminanPronto}
           direccion="izquierda"
         />
       </div>
