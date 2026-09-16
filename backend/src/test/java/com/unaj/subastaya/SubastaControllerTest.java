@@ -16,7 +16,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,11 +43,15 @@ class SubastaControllerTest {
     @Autowired
     private SubastaRepository subastaRepository;
 
+    // Trackeamos solo lo que este test crea (no "todo id > ID_MAX_SEED"): la base de datos
+    // de desarrollo es compartida con la app real, y borrar por rango de id se lleva puesto
+    // subastas ajenas que ya tienen pujas encima (rompe por foreign key).
+    private final List<Long> idsCreados = new ArrayList<>();
+
     @AfterEach
     void limpiarSubastasCreadas() {
-        subastaRepository.findAll().stream()
-                .filter(subasta -> subasta.getId() > ID_MAX_SEED)
-                .forEach(subastaRepository::delete);
+        idsCreados.forEach(subastaRepository::deleteById);
+        idsCreados.clear();
     }
 
     @Test
@@ -215,7 +221,11 @@ class SubastaControllerTest {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
                 .build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 201) {
+            idsCreados.add(objectMapper.readTree(response.body()).get("id").asLong());
+        }
+        return response;
     }
 
     private HttpResponse<String> get(String ruta) throws Exception {
